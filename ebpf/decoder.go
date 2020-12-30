@@ -33,22 +33,22 @@ func newDecoder(v4 bool) *decoder {
 	}
 }
 
-func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
+func (d *decoder) decode(data []byte, fields []string, buf *bytes.Buffer) {
 	var prop FieldAttrs
 
 	d.c = 0
 
 	buf.WriteRune('{')
 
-	for _, metric := range metrics {
+	for _, field := range fields {
 		if d.v4 {
-			prop = fieldsModel4[metric]
+			prop = fieldsModel4[field]
 		} else {
-			prop = fieldsModel6[metric]
+			prop = fieldsModel6[field]
 		}
 
 		buf.WriteRune('"')
-		buf.Write([]byte(metric))
+		buf.Write([]byte(field))
 		buf.WriteRune('"')
 		buf.WriteRune(':')
 
@@ -120,7 +120,7 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 			// TODO padding
 
 			buf.WriteRune('"')
-			buf.Write(data[d.c : d.c+16])
+			buf.Write(bytes.Trim(data[d.c:d.c+16], "\x00"))
 			buf.WriteRune('"')
 			buf.WriteRune(',')
 
