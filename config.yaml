@@ -1,0 +1,35 @@
+tracepoints:
+  - name: sock:inet_sock_set_state
+    fields: fields_01
+    tcp_state: TCP_CLOSE
+    pollingInterval: 100
+    inet: [4,6]
+    geo: enable
+    output: 
+      type: jsonl
+      filename: /tmp/myfile.jsonl
+
+  # - name: tcp:tcp_retransmit_skb
+  #   fields: fields_01
+  #   tcp_state: TCP_CLOSE
+  #   pollingInterval: 100
+  #   inet: [4]
+  #   geo: enable
+  #   output: 
+  #     type: jsonl
+  #     filename: /tmp/myfile.jsonl    
+      
+fields:
+  fields_01:
+     - name: Task
+     - name: SRTT
+       func: ''
+       filter: ''
+     - name: TotalRetrans
+     - name: AdvMSS
+     - name: BytesReceived 
+     - name: SegsIn
+     - name: SegsOut
+     - name: SAddr
+     - name: DAddr
+     - name: PID
