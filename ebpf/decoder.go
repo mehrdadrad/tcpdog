@@ -53,13 +53,19 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 		buf.WriteRune(':')
 
 		switch prop.CType {
-		case u16:
+		case u8:
 
-			if !prop.DSNP {
-				d.v16 = binary.LittleEndian.Uint16(data[d.c:])
-			} else {
-				d.v16 = binary.BigEndian.Uint16(data[d.c:])
+			buf.Write([]byte(strconv.FormatUint(uint64(data[d.c]), 10)))
+			buf.WriteRune(',')
+
+			d.c++
+
+		case u16:
+			if d.c%2 > 0 {
+				d.c += (2 - (d.c % 2))
 			}
+
+			d.v16 = bytesToUint16(prop.BigEndian, data, d.c)
 
 			buf.Write([]byte(strconv.FormatUint(uint64(d.v16), 10)))
 			buf.WriteRune(',')
@@ -68,7 +74,7 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 
 		case u32:
 			if d.c%4 > 0 {
-				d.c += (d.c % 4)
+				d.c += (4 - (d.c % 4))
 			}
 
 			if prop.DType == IP {
@@ -77,11 +83,7 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 				buf.Write([]byte(d.ip.String()))
 				buf.WriteRune('"')
 			} else {
-				if !prop.DSNP {
-					d.v32 = binary.LittleEndian.Uint32(data[d.c:])
-				} else {
-					d.v32 = binary.BigEndian.Uint32(data[d.c:])
-				}
+				d.v32 = bytesToUint32(prop.BigEndian, data, d.c)
 				buf.Write([]byte(strconv.FormatUint(uint64(d.v32), 10)))
 			}
 
@@ -94,11 +96,7 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 				d.c += (8 - (d.c % 8))
 			}
 
-			if !prop.DSNP {
-				d.v64 = binary.LittleEndian.Uint64(data[d.c:])
-			} else {
-				d.v64 = binary.BigEndian.Uint64(data[d.c:])
-			}
+			d.v64 = bytesToUint64(prop.BigEndian, data, d.c)
 
 			buf.Write([]byte(strconv.FormatUint(d.v64, 10)))
 			buf.WriteRune(',')
@@ -106,7 +104,9 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 			d.c += 8
 
 		case u128:
-			// TODO padding
+			if d.c%16 > 0 {
+				d.c += (16 - (d.c % 16))
+			}
 
 			d.ip = data[d.c : d.c+16]
 			buf.WriteRune('"')
@@ -137,4 +137,25 @@ func (d *decoder) decode(data []byte, metrics []string, buf *bytes.Buffer) {
 	buf.WriteRune(':')
 	buf.Write([]byte(strconv.FormatInt(time.Now().Unix(), 10)))
 	buf.WriteRune('}')
+}
+
+func bytesToUint16(isBigEndian bool, data []byte, index uint16) uint16 {
+	if !isBigEndian {
+		return binary.LittleEndian.Uint16(data[index:])
+	}
+	return binary.BigEndian.Uint16(data[index:])
+}
+
+func bytesToUint32(isBigEndian bool, data []byte, index uint16) uint32 {
+	if !isBigEndian {
+		return binary.LittleEndian.Uint32(data[index:])
+	}
+	return binary.BigEndian.Uint32(data[index:])
+}
+
+func bytesToUint64(isBigEndian bool, data []byte, index uint16) uint64 {
+	if !isBigEndian {
+		return binary.LittleEndian.Uint64(data[index:])
+	}
+	return binary.BigEndian.Uint64(data[index:])
 }
