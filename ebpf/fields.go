@@ -7,7 +7,10 @@ import (
 	"github.com/mehrdadrad/tcpdog/config"
 )
 
+// CType represents clang type
 type CType uint8
+
+// DType represents data type
 type DType uint8
 
 const (
@@ -20,18 +23,20 @@ const (
 )
 
 const (
+	// IP represents IP data type
 	IP DType = 1
 )
 
 // FieldAttrs represents
 type FieldAttrs struct {
-	CType  CType
-	DType  DType
-	CField string
-	DS     string
-	Func   string
-	Filter string
-	DSNP   bool
+	CType     CType
+	DType     DType
+	CField    string
+	DS        string
+	Func      string
+	Filter    string
+	DSNP      bool
+	BigEndian bool
 }
 
 func (c CType) String() string {
