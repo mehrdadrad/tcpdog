@@ -5,7 +5,6 @@ var fieldsModel4 = map[string]FieldAttrs{
 		CType:  u16,
 		CField: "tcp_header_len",
 		DS:     "tcpi",
-		DSNP:   false,
 	},
 	"SRTT": {
 		DS:     "tcpi",
@@ -13,10 +12,11 @@ var fieldsModel4 = map[string]FieldAttrs{
 		CType:  u32,
 	},
 	"DPort": {
-		DS:     "sk->__sk_common",
-		DSNP:   true,
-		CField: "skc_dport",
-		CType:  u16,
+		DS:        "sk->__sk_common",
+		DSNP:      true,
+		BigEndian: true,
+		CField:    "skc_dport",
+		CType:     u16,
 	},
 	"TotalRetrans": {
 		DS:     "tcpi",
@@ -29,18 +29,20 @@ var fieldsModel4 = map[string]FieldAttrs{
 		CType:  u16,
 	},
 	"SAddr": {
-		DS:     "sk->__sk_common",
-		DSNP:   true,
-		CField: "skc_rcv_saddr",
-		CType:  u32,
-		DType:  IP,
+		DS:        "sk->__sk_common",
+		DSNP:      true,
+		BigEndian: true,
+		CField:    "skc_rcv_saddr",
+		CType:     u32,
+		DType:     IP,
 	},
 	"DAddr": {
-		DS:     "sk->__sk_common",
-		DSNP:   true,
-		CField: "skc_daddr",
-		CType:  u32,
-		DType:  IP,
+		DS:        "sk->__sk_common",
+		DSNP:      true,
+		BigEndian: true,
+		CField:    "skc_daddr",
+		CType:     u32,
+		DType:     IP,
 	},
 	"BytesReceived": {
 		DS:     "tcpi",
@@ -56,6 +58,30 @@ var fieldsModel4 = map[string]FieldAttrs{
 		DS:     "tcpi",
 		CField: "BytesAcked",
 		CType:  u64,
+	},
+	"NumSAcks": {
+		DS:     "tcpi->rx_opt",
+		CField: "num_sacks",
+		CType:  u8,
+		DSNP:   true,
+	},
+	"UserMSS": {
+		DS:     "tcpi->rx_opt",
+		CField: "user_mss",
+		CType:  u16,
+		DSNP:   true,
+	},
+	"RTT": {
+		DS:     "tcpi->rack",
+		CField: "rtt_us",
+		CType:  u32,
+		DSNP:   true,
+	},
+	"MSSClamp": {
+		DS:     "tcpi->rx_opt",
+		CField: "mss_clamp",
+		CType:  u16,
+		DSNP:   true,
 	},
 	"Task": {
 		DS:     "bpf_get_current_comm",
@@ -80,6 +106,16 @@ var fieldsModel4 = map[string]FieldAttrs{
 	"DsackDups": {
 		DS:     "tcpi",
 		CField: "dsack_dups",
+		CType:  u32,
+	},
+	"RateDelivered": {
+		DS:     "tcpi",
+		CField: "rate_delivered",
+		CType:  u32,
+	},
+	"RateInterval": {
+		DS:     "tcpi",
+		CField: "rate_interval_us",
 		CType:  u32,
 	},
 }
