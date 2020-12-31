@@ -2,8 +2,10 @@ package ebpf
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
+	"sync"
 
 	bpf "github.com/iovisor/gobpf/bcc"
 
@@ -16,10 +18,12 @@ type BPF struct {
 	perfMaps []*bpf.PerfMap
 }
 
+// TP represents a tracepoint
 type TP struct {
 	Name    string
-	Index   int
+	BufPool *sync.Pool
 	OutChan chan *bytes.Buffer
+	Index   int
 	Workers int
 	INet    []int
 	Fields  []string
@@ -38,7 +42,7 @@ func New(conf *config.Config) *BPF {
 }
 
 // Start ...
-func (b *BPF) Start(tp TP) {
+func (b *BPF) Start(ctx context.Context, tp TP) {
 	trace, err := b.m.LoadTracepoint(fmt.Sprintf("sk_trace%d", tp.Index))
 	if err != nil {
 		log.Fatal(err)
@@ -59,7 +63,8 @@ func (b *BPF) Start(tp TP) {
 			for {
 				data := <-ch
 				//log.Printf("%#v\n", data)
-				buf := new(bytes.Buffer)
+				buf := tp.BufPool.Get().(*bytes.Buffer)
+				buf.Reset()
 				d.decode(data, tp.Fields, buf)
 				tp.OutChan <- buf
 			}
