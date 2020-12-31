@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"io/ioutil"
 	"log"
 	"os"
@@ -8,10 +9,29 @@ import (
 	yml "gopkg.in/yaml.v3"
 )
 
+type ctxKey string
+
 // Config represents tcpstats's config
 type Config struct {
 	Tracepoints []Tracepoint
 	Fields      map[string][]Field
+	Output      map[string]OutputConfig
+}
+
+// OutputConfig represents output's configuration
+type OutputConfig struct {
+	Type   string
+	Config map[string]string
+}
+
+// WithContext returns new context including configuration
+func (c *Config) WithContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, ctxKey("cfg"), c)
+}
+
+// FromContext returns configuration from context
+func FromContext(ctx context.Context) *Config {
+	return ctx.Value(ctxKey("cfg")).(*Config)
 }
 
 // Tracepoint represents a tracepoint's config
@@ -22,9 +42,10 @@ type Tracepoint struct {
 	PollingInterval int    `yaml:"pollingInterval"`
 	Inet            []int  `yaml:"inet"`
 	Geo             string `yaml:"geo"`
+	Output          string `yaml:"output"`
 }
 
-// Field ....
+// Field represents a field
 type Field struct {
 	Name   string `yaml:"name"`
 	Func   string `yaml:"func,omitempty"`
@@ -43,7 +64,7 @@ func (c *Config) GetTPFields(name string) []string {
 	return fields
 }
 
-// Load ...
+// Load reads yaml configuration
 func Load() *Config {
 	file, err := os.Open("./config.yaml")
 	if err != nil {
