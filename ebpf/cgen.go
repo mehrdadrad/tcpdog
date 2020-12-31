@@ -22,17 +22,10 @@ type TracepointTemplate struct {
 
 // Init intializes tracepointTemplate
 func (t *TracepointTemplate) Init() {
-	for _, f := range t.Fields4 {
+	for _, f := range append(t.Fields4, t.Fields6...) {
 		if f.DS == "tcpi" {
 			t.TCPInfo = true
-			return
-		}
-	}
-
-	for _, f := range t.Fields6 {
-		if f.DS == "tcpi" {
-			t.TCPInfo = true
-			return
+			break
 		}
 	}
 }
