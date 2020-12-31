@@ -120,7 +120,7 @@ func (d *decoder) decode(data []byte, fields []string, buf *bytes.Buffer) {
 			// TODO padding
 
 			buf.WriteRune('"')
-			buf.Write(bytes.Trim(data[d.c:d.c+16], "\x00"))
+			buf.Write(trim(data[d.c : d.c+16]))
 			buf.WriteRune('"')
 			buf.WriteRune(',')
 
@@ -158,4 +158,13 @@ func bytesToUint64(isBigEndian bool, data []byte, index uint16) uint64 {
 		return binary.LittleEndian.Uint64(data[index:])
 	}
 	return binary.BigEndian.Uint64(data[index:])
+}
+
+func trim(b []byte) []byte {
+	for i := 0; i < len(b); i++ {
+		if b[i] == '\x00' {
+			return b[:i]
+		}
+	}
+	return b
 }
