@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package tcpdog;
+
+message TCPDog {
+    int32 PID = 1;
+    string Task = 2;
+    int32 SRTT = 3;
+}
