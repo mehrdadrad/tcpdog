@@ -7,12 +7,24 @@ import (
 
 	"github.com/sethvargo/go-signalcontext"
 
+	"github.com/mehrdadrad/tcpdog/cli"
 	"github.com/mehrdadrad/tcpdog/config"
 	"github.com/mehrdadrad/tcpdog/ebpf"
 	"github.com/mehrdadrad/tcpdog/output"
 )
+import (
+	"log"
+	"os"
+)
 
 func main() {
+	r, err := cli.Get(os.Args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_ = r
+
 	cfg := config.Load()
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
@@ -36,7 +48,7 @@ func main() {
 
 		ch := make(chan *bytes.Buffer, 1000)
 		chMap[tracepoint.Output] = ch
-		output.Create(ctx, tracepoint.Output, bufPool, ch)
+		output.Start(ctx, tracepoint, bufPool, ch)
 	}
 
 	for index, tracepoint := range cfg.Tracepoints {

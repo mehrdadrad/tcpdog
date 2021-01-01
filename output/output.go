@@ -8,11 +8,13 @@ import (
 
 	"github.com/mehrdadrad/tcpdog/config"
 	"github.com/mehrdadrad/tcpdog/output/console"
+	"github.com/mehrdadrad/tcpdog/output/csv"
+	"github.com/mehrdadrad/tcpdog/output/jsonl"
 	"github.com/mehrdadrad/tcpdog/output/kafka"
 )
 
-// Create creates a new output based on the configuration
-func Create(ctx context.Context, name string, bufpool *sync.Pool, ch chan *bytes.Buffer) {
+// Start starts an output based on the output type at configuration.
+func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) {
 	var (
 		output config.OutputConfig
 		err    error
@@ -20,8 +22,8 @@ func Create(ctx context.Context, name string, bufpool *sync.Pool, ch chan *bytes
 	)
 
 	cfg := config.FromContext(ctx)
-	if output, ok = cfg.Output[name]; !ok {
-		log.Fatal("output not found")
+	if output, ok = cfg.Output[tp.Output]; !ok {
+		log.Fatal("output not found:", tp.Output)
 	}
 
 	switch output.Type {
@@ -30,9 +32,9 @@ func Create(ctx context.Context, name string, bufpool *sync.Pool, ch chan *bytes
 	case "grpc":
 		// TODO
 	case "csv":
-		// TODO
+		err = csv.Start(ctx, tp, bufpool, ch)
 	case "jsonl":
-		// TODO
+		err = jsonl.Start(ctx, tp, bufpool, ch)
 	default:
 		err = console.New(ctx, output.Config, bufpool, ch)
 	}
