@@ -17,6 +17,7 @@ type TracepointTemplate struct {
 	Tracepoint string
 	TCPState   string
 	Suffix     int
+	Sample     int
 	TCPInfo    bool
 }
 
@@ -88,6 +89,7 @@ func (c *CGen) getTracepointBPFCode(index int, tp config.Tracepoint) (string, er
 		Tracepoint: tp.Name,
 		TCPState:   tp.TCPState,
 		Suffix:     index,
+		Sample:     tp.Sample,
 	}
 
 	tt.Init()

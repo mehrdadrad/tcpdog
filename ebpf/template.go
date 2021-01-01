@@ -18,6 +18,11 @@ var funcMap = template.FuncMap{
 
 const source = `
 	{{if .Fields4}}
+
+	{{if ne .Sample 0}}
+	BPF_HASH(ipv4_sample, struct sock *, u64, 100000);
+	{{- end}}
+
 	struct ipv4_data{{.Suffix}}_t {
 		{{- range $value := .Fields4}}
 		{{if eq $value.CField "current_comm"}}
@@ -31,6 +36,11 @@ const source = `
 	{{end}}
 
 	{{if .Fields6}}
+
+	{{if ne .Sample 0}}
+	BPF_HASH(ipv6_sample, struct sock *, u64, 100000);
+	{{- end}}
+
 	struct ipv6_data{{.Suffix}}_t {
 		{{- range $value := .Fields6}}
 		{{if eq $value.CField "current_comm"}}
@@ -94,6 +104,25 @@ const source = `
 			{{- end}}
 			{{- end}}
 
+			{{if ne .Sample 0}}
+			u64 *count;
+			u64 zero = 0;
+			count = ipv4_sample.lookup_or_try_init(&sk, &zero);
+			if (!count) {
+				bpf_probe_read_kernel(&count, sizeof(count), &zero);
+				ipv4_sample.increment(sk);
+				return 0;
+			}
+
+			if (*count < {{.Sample}}) {
+				ipv4_sample.increment(sk);
+				return 0;
+			}
+			
+			ipv4_sample.delete(&sk);	
+			
+			{{- end}}
+
 			ipv4_events{{.Suffix}}.perf_submit(args, &data4, sizeof(data4));
 
 			return 0;
@@ -140,6 +169,25 @@ const source = `
 				return 0;
 			}
 			{{- end}}
+			{{- end}}
+
+			{{if ne .Sample 0}}
+			u64 *count;
+			u64 zero = 0;
+			count = ipv6_sample.lookup_or_try_init(&sk, &zero);
+			if (!count) {
+				bpf_probe_read_kernel(&count, sizeof(count), &zero);
+				ipv6_sample.increment(sk);
+				return 0;
+			}
+
+			if (*count < {{.Sample}}) {
+				ipv6_sample.increment(sk);
+				return 0;
+			}
+			
+			ipv6_sample.delete(&sk);	
+			
 			{{- end}}
 
 			ipv6_events{{.Suffix}}.perf_submit(args, &data6, sizeof(data6));
