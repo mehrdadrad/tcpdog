@@ -23,9 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_ = r
-
-	cfg := config.Load()
+	cfg := config.Get(r)
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
 
