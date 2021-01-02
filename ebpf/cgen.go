@@ -40,10 +40,6 @@ type CGen struct {
 func GetBPFCode(conf *config.Config) (string, error) {
 	var bpfCode string
 
-	if conf.Tracepoints == nil {
-		return getDefaultBPFCode(), nil
-	}
-
 	cg := CGen{conf: conf}
 	for index, tracepoint := range conf.Tracepoints {
 		code, err := cg.getTracepointBPFCode(index, tracepoint)
@@ -55,10 +51,6 @@ func GetBPFCode(conf *config.Config) (string, error) {
 	}
 
 	return includes + bpfCode, nil
-}
-
-func getDefaultBPFCode() string {
-	return ""
 }
 
 func (c *CGen) getTracepointBPFCode(index int, tp config.Tracepoint) (string, error) {
