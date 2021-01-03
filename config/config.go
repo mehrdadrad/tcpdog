@@ -9,9 +9,6 @@ import (
 	yml "gopkg.in/yaml.v3"
 )
 
-// TODO : validate fields
-// TODO : defaultConfig
-
 type ctxKey string
 
 // Config represents tcpstats's config
@@ -33,6 +30,8 @@ type CLIRequest struct {
 	Fields     []string
 	IPv4       bool
 	IPv6       bool
+	Workers    int
+	Sample     int
 	TCPState   string
 	Output     string
 	Config     string
@@ -96,8 +95,6 @@ func load(file string) (*Config, error) {
 		return nil, err
 	}
 
-	setDefault(c)
-
 	return c, nil
 }
 
@@ -119,6 +116,10 @@ func Get(cli *CLIRequest) *Config {
 		err    error
 	)
 
+	defer func() {
+		setDefault(config)
+	}()
+
 	if cli.Config != "" {
 		config, err = load(cli.Config)
 		if err != nil {
@@ -136,12 +137,24 @@ func Get(cli *CLIRequest) *Config {
 }
 
 func cliToConfig(cli *CLIRequest) (*Config, error) {
+	var inet []int
+
+	if cli.IPv4 {
+		inet = append(inet, 4)
+	}
+	if cli.IPv6 {
+		inet = append(inet, 6)
+	}
+
 	config := &Config{
 		Tracepoints: []Tracepoint{
 			{
 				Name:     cli.Tracepoint,
 				Fields:   "cli",
 				TCPState: cli.TCPState,
+				Workers:  cli.Workers,
+				Sample:   cli.Sample,
+				Inet:     inet,
 				Output:   "console",
 			},
 		},
@@ -154,10 +167,6 @@ func cliToConfig(cli *CLIRequest) (*Config, error) {
 			},
 		},
 	}
-
-	//if cli.IPv4
-
-	setDefault(config)
 
 	return config, nil
 }
