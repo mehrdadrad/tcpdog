@@ -180,6 +180,31 @@ var (
 			Desc:   "Slow start size threshold",
 		},
 	}
+
+	validTracepoints = map[string]bool{
+		"tcp:tcp_retransmit_skb":    true,
+		"tcp:tcp_retransmit_synack": true,
+		"tcp:tcp_destroy_sock":      true,
+		"tcp:tcp_send_reset":        true,
+		"tcp:tcp_receive_reset":     true,
+		"tcp:tcp_probe":             true,
+		"sock:inet_sock_set_state":  true,
+	}
+
+	validTCPStatus = map[string]uint8{
+		"TCP_ESTABLISHED":  1,
+		"TCP_SYN_SENT":     2,
+		"TCP_SYN_RECV":     3,
+		"TCP_FIN_WAIT1":    4,
+		"TCP_FIN_WAIT2":    5,
+		"TCP_TIME_WAIT":    6,
+		"TCP_CLOSE":        7,
+		"TCP_CLOSE_WAIT":   8,
+		"TCP_LAST_ACK":     9,
+		"TCP_LISTEN":       10,
+		"TCP_CLOSING":      11,
+		"TCP_NEW_SYN_RECV": 12,
+	}
 )
 
 func init() {
@@ -208,5 +233,22 @@ func ValidateField(f string) (string, error) {
 		return v, nil
 	}
 
-	return f, fmt.Errorf("%s, invalid field", f)
+	return f, fmt.Errorf("invalid field: %s", f)
+}
+
+// ValidateTCPStatus validates a TCP status
+func ValidateTCPStatus(status string) (string, error) {
+	statusUpper := strings.ToUpper(status)
+	if _, ok := validTCPStatus[statusUpper]; !ok {
+		return statusUpper, fmt.Errorf("invalid TCP status: %s", status)
+	}
+	return statusUpper, nil
+}
+
+// ValidateTracepoint validates a tracepoint
+func ValidateTracepoint(tp string) error {
+	if _, ok := validTracepoints[tp]; !ok {
+		return fmt.Errorf("invalid tracepoint: %s", tp)
+	}
+	return nil
 }
