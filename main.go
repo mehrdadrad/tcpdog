@@ -63,6 +63,7 @@ func main() {
 			BufPool: bufPool,
 			OutChan: chMap[tracepoint.Output],
 			INet:    tracepoint.Inet,
+			Workers: tracepoint.Workers,
 			Fields:  cfg.GetTPFields(tracepoint.Fields),
 		})
 	}

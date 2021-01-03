@@ -54,6 +54,7 @@ type Tracepoint struct {
 	Fields   string `yaml:"fields"`
 	TCPState string `yaml:"tcp_state"`
 	Sample   int    `yaml:"sample"`
+	Workers  int    `yaml:"workers"`
 	Inet     []int  `yaml:"inet"`
 	Geo      string `yaml:"geo"`
 	Output   string `yaml:"output"`
@@ -105,6 +106,9 @@ func setDefault(conf *Config) {
 		if len(conf.Tracepoints[i].Inet) < 1 {
 			conf.Tracepoints[i].Inet = append(conf.Tracepoints[i].Inet, 4)
 		}
+		if conf.Tracepoints[i].Workers < 1 {
+			conf.Tracepoints[i].Workers = 1
+		}
 	}
 }
 
@@ -150,6 +154,8 @@ func cliToConfig(cli *CLIRequest) (*Config, error) {
 			},
 		},
 	}
+
+	//if cli.IPv4
 
 	setDefault(config)
 

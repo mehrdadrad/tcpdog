@@ -41,7 +41,7 @@ func New(conf *config.Config) *BPF {
 	return &BPF{m: m}
 }
 
-// Start ...
+// Start loads and attaches tracepoint and approperiate channel
 func (b *BPF) Start(ctx context.Context, tp TP) {
 	trace, err := b.m.LoadTracepoint(fmt.Sprintf("sk_trace%d", tp.Index))
 	if err != nil {
@@ -53,29 +53,43 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 	for _, version := range tp.INet {
 		table := bpf.NewTable(b.m.TableId(fmt.Sprintf("ipv%d_events%d", version, tp.Index)), b.m)
 		ch := make(chan []byte, 1000)
+
 		perfMap, err := bpf.InitPerfMap(table, ch, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		go func(version int) {
-			d := newDecoder((version == 4))
-			for {
-				data := <-ch
-				//log.Printf("%#v\n", data)
-				buf := tp.BufPool.Get().(*bytes.Buffer)
-				buf.Reset()
-				d.decode(data, tp.Fields, buf)
-				tp.OutChan <- buf
-			}
-		}(version)
+		for i := 0; i < tp.Workers; i++ {
+			go func(version int) {
+				data := []byte{}
+				d := newDecoder((version == 4))
+
+				for {
+					select {
+					case data = <-ch:
+					case <-ctx.Done():
+						return
+					}
+
+					buf := tp.BufPool.Get().(*bytes.Buffer)
+					buf.Reset()
+					d.decode(data, tp.Fields, buf)
+
+					select {
+					case tp.OutChan <- buf:
+					default:
+						log.Println("output channel maxed out")
+					}
+				}
+			}(version)
+		}
 
 		perfMap.Start()
 		b.perfMaps = append(b.perfMaps, perfMap)
 	}
 }
 
-// Close ...
+// Close cleans up BPF attachments
 func (b *BPF) Close() {
 	for _, perfMap := range b.perfMaps {
 		perfMap.Stop()
