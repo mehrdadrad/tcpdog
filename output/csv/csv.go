@@ -19,6 +19,8 @@ type csv struct {
 	buffer     *bytes.Buffer
 }
 
+var comma = []byte(",")[0]
+
 func (c *csv) init(conf map[string]string, fields []config.Field) error {
 	var err error
 
@@ -38,7 +40,7 @@ func (c *csv) marshal(buf *bytes.Buffer) {
 
 	for _, l := range c.fieldsLen {
 		buf.Next(l)
-		v, _ := buf.ReadBytes([]byte(",")[0])
+		v, _ := buf.ReadBytes(comma)
 		c.buffer.Write(v)
 	}
 

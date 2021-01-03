@@ -19,6 +19,8 @@ type jsonl struct {
 	buffer     *bytes.Buffer
 }
 
+var comma = []byte(",")[0]
+
 func (j *jsonl) init(conf map[string]string, fields []config.Field) error {
 	var err error
 
@@ -39,7 +41,7 @@ func (j *jsonl) marshal(buf *bytes.Buffer) {
 	j.buffer.WriteRune('[')
 	for _, l := range j.fieldsLen {
 		buf.Next(l)
-		v, _ := buf.ReadBytes([]byte(",")[0])
+		v, _ := buf.ReadBytes(comma)
 		j.buffer.Write(v)
 	}
 
