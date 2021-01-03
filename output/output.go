@@ -9,6 +9,8 @@ import (
 	"github.com/mehrdadrad/tcpdog/config"
 	"github.com/mehrdadrad/tcpdog/output/console"
 	"github.com/mehrdadrad/tcpdog/output/csv"
+
+	"github.com/mehrdadrad/tcpdog/output/grpc"
 	"github.com/mehrdadrad/tcpdog/output/jsonl"
 	"github.com/mehrdadrad/tcpdog/output/kafka"
 )
@@ -30,7 +32,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	case "kafka":
 		err = kafka.New(ctx, output.Config, bufpool, ch)
 	case "grpc":
-		// TODO
+		err = grpc.Start(ctx, output.Config, bufpool, ch)
 	case "csv":
 		err = csv.Start(ctx, tp, bufpool, ch)
 	case "jsonl":
