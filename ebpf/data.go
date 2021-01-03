@@ -179,6 +179,96 @@ var (
 			CType:  u32,
 			Desc:   "Slow start size threshold",
 		},
+		"GSOSegs": {
+			CType:  u16,
+			CField: "gso_segs",
+			DS:     "tcpi",
+			Desc:   "Max number of segs per GSO packet",
+		},
+		"DataSegsIn": {
+			CType:  u32,
+			CField: "data_segs_in",
+			DS:     "tcpi",
+			Desc:   "Total number of data segments in",
+		},
+		"MaxWindow": {
+			CType:  u32,
+			CField: "max_window",
+			DS:     "tcpi",
+			Desc:   "Maximal window ever seen from peer",
+		},
+		"SndWnd": {
+			CType:  u32,
+			CField: "snd_wnd",
+			DS:     "tcpi",
+			Desc:   "The window we expect to receive",
+		},
+		"WindowClamp": {
+			CType:  u32,
+			CField: "window_clamp",
+			DS:     "tcpi",
+			Desc:   "Maximal window to advertise",
+		},
+		"RcvSSThresh": {
+			CType:  u32,
+			CField: "rcv_ssthresh",
+			DS:     "tcpi",
+			Desc:   "Current window clamp",
+		},
+		"ECNFlags": {
+			CType:  u8,
+			CField: "ecn_flags",
+			DS:     "tcpi",
+			Desc:   "ECN status bits",
+		},
+		"SndCwnd": {
+			CType:  u32,
+			CField: "snd_cwnd",
+			DS:     "tcpi",
+			Desc:   "Sending congestion window",
+		},
+		"PrrOut": {
+			CType:  u32,
+			CField: "prr_out",
+			DS:     "tcpi",
+			Desc:   "Total number of pkts sent during Recovery",
+		},
+		"Delivered": {
+			CType:  u32,
+			CField: "delivered",
+			DS:     "tcpi",
+			Desc:   "Total data packets delivered incl. rexmits",
+		},
+		"DeliveredCe": {
+			CType:  u32,
+			CField: "delivered_ce",
+			DS:     "tcpi",
+			Desc:   "Like the above but only ECE marked packets",
+		},
+		"Lost": {
+			CType:  u32,
+			CField: "lost",
+			DS:     "tcpi",
+			Desc:   "Total data packets lost incl. rexmits",
+		},
+		"LostOut": {
+			CType:  u32,
+			CField: "lost_out",
+			DS:     "tcpi",
+			Desc:   "Lost packets",
+		},
+		"PriorSSThresh": {
+			CType:  u32,
+			CField: "prior_ssthresh",
+			DS:     "tcpi",
+			Desc:   "ssthresh saved at recovery start",
+		},
+		"DataSegsOut": {
+			CType:  u32,
+			CField: "data_segs_out",
+			DS:     "tcpi",
+			Desc:   "Total number of data segments sent RFC4898",
+		},
 	}
 
 	validTracepoints = map[string]bool{
@@ -223,7 +313,7 @@ func init() {
 	}
 }
 
-// ValidateField checks if field exist
+// ValidateField validates a field
 func ValidateField(f string) (string, error) {
 	if _, ok := fieldsModel4[f]; ok {
 		return f, nil
