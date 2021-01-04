@@ -2,8 +2,43 @@ syntax = "proto3";
 
 package tcpdog;
 
-message TCPDog {
-    int32 PID = 1;
-    string Task = 2;
-    int32 SRTT = 3;
+import "google/protobuf/struct.proto";
+
+service TCPDog {
+    rpc Tracepoint(stream Fields) returns (Response) {}
+    rpc TracepointPBS(stream FieldsPBS) returns (Response) {}
+}
+
+message FieldsPBS {
+   google.protobuf.Struct fields = 1;
+}
+
+message Fields {
+    int32 TCPHeaderLen = 1;
+    int32 SRTT = 2;
+    int32 MDev = 3; 
+    int32 TotalRetrans = 4;
+    int32 AdvMSS = 5;
+    string SAddr = 6;
+    string DAddr = 7;
+    int32 DPort = 8;
+    int32 LPort = 9;
+    int64 BytesReceived = 10;
+    int64 BytesSent = 11;
+    int64 BytesAcked = 12;
+    int32 NumSAcks = 13;
+    int32 UserMSS = 14;
+    int32 RTT = 15;
+    int32 MSSClamp = 16;
+    string Task = 17;
+    int32 PID = 18;
+    int32 SegsIn = 19;
+    int32 SegsOut = 20;
+    int32 DsackDups = 21;
+    int32 RateDelivered = 22;
+    int32 RateInterval = 23;
+}
+
+message Response {
+    int32 code = 1;
 }
