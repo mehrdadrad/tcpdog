@@ -2,48 +2,136 @@ package grpc
 
 import (
 	"bytes"
+	"context"
+	"fmt"
+	"log"
+	"net"
+	"os"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 
 	"github.com/mehrdadrad/tcpdog/config"
+	pb "github.com/mehrdadrad/tcpdog/proto"
 )
 
-var cfg = config.Config{
-	Output: map[string]config.OutputConfig{
-		"myoutput": {
-			Type: "grpc2",
-		},
-	},
-	Fields: map[string][]config.Field{
-		"myfields": {
-			{Name: "Task"},
-			{Name: "Fake1"},
-			{Name: "Fake2"},
-		},
-	},
+var (
+	srv  = server{}
+	port int
+)
+
+type server struct {
+	ch1 *pb.Fields
+	ch2 *pb.FieldsPBS
 }
 
-func TestPBStructUnmarshal(t *testing.T) {
-	g := &grpc2{buffer: new(bytes.Buffer)}
-	g.init(cfg.Fields["myfields"])
-	g.hostname = "fakehost"
-	buf := bytes.NewBufferString(`{"Task":"curl","Fake1":1,"Fake2":2,"Timestamp":1609720926}`)
-	r := g.pbStructUnmarshal(buf)
+func (s *server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
 
-	assert.Equal(t, "curl", r.Fields["Task"].GetStringValue())
-	assert.Equal(t, 1.0, r.Fields["Fake1"].GetNumberValue())
-	assert.Equal(t, 2.0, r.Fields["Fake2"].GetNumberValue())
-	assert.Equal(t, "fakehost", r.Fields["Hostname"].GetStringValue())
+	for {
+		f, err := srv.Recv()
+		if err != nil {
+			return err
+		}
 
-}
-
-func BenchmarkPBStructUnmarshal(b *testing.B) {
-	g := &grpc2{buffer: new(bytes.Buffer)}
-	g.init(cfg.Fields["myfields"])
-
-	for i := 0; i < b.N; i++ {
-		buf := bytes.NewBufferString(`{"Task":"curl","Fake1":1,"Fake2":2,"Timestamp":1609720926}`)
-		g.pbStructUnmarshal(buf)
+		s.ch1 = f
 	}
+}
+
+func (s *server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
+	for {
+		f, err := srv.Recv()
+		if err != nil {
+			return err
+		}
+
+		s.ch2 = f
+	}
+}
+
+func TestGRPC(t *testing.T) {
+	l, err := net.Listen("tcp", ":0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	port = l.Addr().(*net.TCPAddr).Port
+
+	srv = server{}
+	gServer := grpc.NewServer()
+	pb.RegisterTCPDogServer(gServer, &srv)
+	go gServer.Serve(l)
+
+	t.Run("StructPB", testStructPB)
+	t.Run("testProtoJSON", testProtoJSON)
+
+	t.Cleanup(func() { l.Close() })
+}
+
+func testStructPB(t *testing.T) {
+	ch := make(chan *bytes.Buffer, 1)
+	bufPool := &sync.Pool{
+		New: func() interface{} {
+			return new(bytes.Buffer)
+		},
+	}
+
+	tp := config.Tracepoint{Output: "foo", Fields: "fields01"}
+	cfg := config.Config{
+		Fields: map[string][]config.Field{
+			"fields01": {
+				{Name: "F1"},
+				{Name: "F2"},
+			},
+		},
+		Output: map[string]config.OutputConfig{
+			"foo": {Config: map[string]string{
+				"server":   fmt.Sprintf(":%d", port),
+				"insecure": "true"}},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	ctx = cfg.WithContext(ctx)
+	ch <- bytes.NewBufferString(`{"F1":5,"F2":6,"Timestamp":1609564925}`)
+	StartStructPB(ctx, tp, bufPool, ch)
+	time.Sleep(time.Second)
+
+	hostname, _ := os.Hostname()
+
+	assert.NotNil(t, srv.ch2)
+	assert.Equal(t, 5.0, srv.ch2.Fields.Fields["F1"].GetNumberValue())
+	assert.Equal(t, 6.0, srv.ch2.Fields.Fields["F2"].GetNumberValue())
+	assert.Equal(t, hostname, srv.ch2.Fields.Fields["Hostname"].GetStringValue())
+	assert.Equal(t, 1609564925.0, srv.ch2.Fields.Fields["Timestamp"].GetNumberValue())
+
+	cancel()
+	time.Sleep(time.Second)
+}
+
+func testProtoJSON(t *testing.T) {
+	ch := make(chan *bytes.Buffer, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	bufPool := &sync.Pool{
+		New: func() interface{} {
+			return new(bytes.Buffer)
+		},
+	}
+
+	grpcConf := map[string]string{
+		"server":   fmt.Sprintf(":%d", port),
+		"insecure": "true",
+	}
+
+	ch <- bytes.NewBufferString(`{"SRTT":5,"AdvMSS":6,"Timestamp":1609564925}`)
+	Start(ctx, grpcConf, bufPool, ch)
+	time.Sleep(time.Second)
+
+	assert.NotNil(t, srv.ch1)
+	assert.Equal(t, int32(5), srv.ch1.SRTT)
+	assert.Equal(t, int32(6), srv.ch1.AdvMSS)
+
+	cancel()
+	time.Sleep(time.Second)
 }

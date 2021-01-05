@@ -4,162 +4,152 @@ import (
 	"bytes"
 	"context"
 	"log"
-	"os"
-	"strconv"
 	"sync"
-	"time"
 
-	pbstruct "github.com/golang/protobuf/ptypes/struct"
 	pb "github.com/mehrdadrad/tcpdog/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/output/helper"
 )
 
-var comma = []byte(",")[0]
+// StartStructPB sends fields to a grpc server with structpb type.
+func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		err     error
+		stream  pb.TCPDog_TracepointPBSClient
+		conn    *grpc.ClientConn
+		backoff = helper.Backoff{}
+	)
 
-type grpc2 struct {
-	fieldsLen  []int
-	fieldsName []string
-	isString   map[string]bool
-	hostname   string
-	buffer     *bytes.Buffer
-}
-
-func (g *grpc2) init(fields []config.Field) {
-	var err error
-	g.isString = map[string]bool{
-		"Task":  true,
-		"SAddr": true,
-		"DAddr": true,
-	}
-
-	g.hostname, err = os.Hostname()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, f := range fields {
-		g.fieldsLen = append(g.fieldsLen, len(f.Name)+3)
-		g.fieldsName = append(g.fieldsName, f.Name)
-	}
-}
-
-func (g *grpc2) pbStructUnmarshal(buf *bytes.Buffer) *pbstruct.Struct {
-	r := &pbstruct.Struct{Fields: make(map[string]*pbstruct.Value)}
-
-	buf.Next(1) // skip bracket
-	for i, l := range g.fieldsLen {
-		buf.Next(l)
-		name := g.fieldsName[i]
-
-		if g.isString[name] {
-			v, err := buf.ReadBytes(comma)
-			if err != nil {
-				log.Fatal(err)
-			}
-			r.Fields[name] = &pbstruct.Value{
-				Kind: &pbstruct.Value_StringValue{StringValue: string(v[1 : len(v)-2])},
-			}
-		} else {
-			v, err := buf.ReadBytes(comma)
-			if err != nil {
-				log.Fatal(err)
-			}
-			vi, err := strconv.Atoi(string(v[:len(v)-1]))
-			if err != nil {
-				log.Fatal(err)
-			}
-			r.Fields[name] = &pbstruct.Value{
-				Kind: &pbstruct.Value_NumberValue{NumberValue: float64(vi)},
-			}
-		}
-	}
-
-	// timestamp
-	buf.Next(12)
-	vv, err := strconv.Atoi(string(buf.Next(10)))
-	if err != nil {
-		log.Println(err)
-	}
-	r.Fields["Hostname"] = &pbstruct.Value{
-		Kind: &pbstruct.Value_StringValue{StringValue: g.hostname},
-	}
-	r.Fields["Timestamp"] = &pbstruct.Value{
-		Kind: &pbstruct.Value_NumberValue{NumberValue: float64(vv)},
-	}
-
-	return r
-}
-
-// Start2 ...
-func Start2(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
-	g := &grpc2{buffer: new(bytes.Buffer)}
 	cfg := config.FromContext(ctx)
-	g.init(cfg.Fields[tp.Fields])
-
-	conn, err := grpc.Dial(":8085", grpc.WithInsecure())
-	if err != nil {
-		return err
-	}
-
-	client := pb.NewTCPDogClient(conn)
-	stream, err := client.TracepointPBS(context.Background())
-	if err != nil {
-		return err
-	}
+	server, dialOpts := gRPCConfig(cfg.Output[tp.Output].Config)
 
 	go func() {
-		var buf *bytes.Buffer
 		for {
-			buf = <-ch
-			t := time.Now()
-			r := g.pbStructUnmarshal(buf)
-			log.Println("ELAPSED:", time.Since(t).Nanoseconds())
-			err = stream.Send(&pb.FieldsPBS{
-				Fields: r,
-			})
-			if err != nil {
-				log.Println(err)
+			if m := backoff.Next(); m != "" {
+				log.Printf("%s", m)
 			}
-			bufpool.Put(buf)
+
+			conn, err = grpc.Dial(server, dialOpts...)
+			if err != nil {
+				continue
+			}
+
+			client := pb.NewTCPDogClient(conn)
+			stream, err = client.TracepointPBS(ctx)
+			if err != nil {
+				continue
+			}
+
+			err = structpb(ctx, stream, tp, bufpool, ch)
+			if err != nil {
+				continue
+			}
+
+			break
 		}
+
 	}()
 
 	return nil
+}
+
+func structpb(ctx context.Context, stream pb.TCPDog_TracepointPBSClient, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		cfg = config.FromContext(ctx)
+		spb = helper.NewStructPB(cfg.Fields[tp.Fields])
+		buf *bytes.Buffer
+		err error
+	)
+
+	for {
+		select {
+		case buf = <-ch:
+			err = stream.Send(&pb.FieldsPBS{
+				Fields: spb.Unmarshal(buf),
+			})
+			if err != nil {
+				return err
+			}
+
+			bufpool.Put(buf)
+		case <-ctx.Done():
+			stream.CloseAndRecv()
+			return nil
+		}
+	}
+}
+
+func jsonpb(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		buf *bytes.Buffer
+	)
+
+	for {
+		select {
+		case buf = <-ch:
+			m := pb.Fields{}
+			protojson.Unmarshal(buf.Bytes(), &m)
+			if err := stream.Send(&m); err != nil {
+				return err
+			}
+
+			bufpool.Put(buf)
+		case <-ctx.Done():
+			stream.CloseAndRecv()
+			return nil
+		}
+	}
 }
 
 // Start sends fields to a grpc server
-func Start(ctx context.Context, cfg map[string]string, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
-	conn, err := grpc.Dial(":8085", grpc.WithInsecure())
-	if err != nil {
-		return err
-	}
+func Start(ctx context.Context, grpcConf map[string]string, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		err     error
+		stream  pb.TCPDog_TracepointClient
+		conn    *grpc.ClientConn
+		backoff = helper.Backoff{}
+	)
 
-	client := pb.NewTCPDogClient(conn)
-	stream, err := client.Tracepoint(context.Background())
-	if err != nil {
-		return err
-	}
+	server, dialOpts := gRPCConfig(grpcConf)
 
 	go func() {
-		var data *bytes.Buffer
-
 		for {
-			select {
-			case data = <-ch:
-				m := pb.Fields{}
-				t := time.Now()
-				protojson.Unmarshal(data.Bytes(), &m)
-				log.Println("JSON ELAPSED:", time.Since(t).Nanoseconds())
-				stream.Send(&m)
-				bufpool.Put(data)
-			case <-ctx.Done():
-				stream.CloseAndRecv()
+			if m := backoff.Next(); m != "" {
+				log.Printf("%s", err)
 			}
+
+			conn, err = grpc.Dial(server, dialOpts...)
+			if err != nil {
+				continue
+			}
+
+			client := pb.NewTCPDogClient(conn)
+			stream, err = client.Tracepoint(ctx)
+			if err != nil {
+				continue
+			}
+
+			err = jsonpb(ctx, stream, bufpool, ch)
+			if err != nil {
+				continue
+			}
+
+			break
 		}
+
 	}()
 
 	return nil
+}
+
+func gRPCConfig(cfg map[string]string) (string, []grpc.DialOption) {
+	opts := []grpc.DialOption{}
+	if cfg["insecure"] == "true" {
+		opts = append(opts, grpc.WithInsecure())
+	}
+
+	return cfg["server"], opts
 }
