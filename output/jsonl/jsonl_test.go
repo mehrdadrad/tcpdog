@@ -50,7 +50,7 @@ func TestStart(t *testing.T) {
 	go Start(ctx, tp, bufPool, ch)
 
 	b := new(bytes.Buffer)
-	b.WriteString(`{"F1":5,"F2":6,"Timestamp": 1609564925}`)
+	b.WriteString(`{"F1":5,"F2":6,"Timestamp":1609564925}`)
 	ch <- b
 	time.Sleep(100 * time.Millisecond)
 	cancel()
@@ -60,7 +60,7 @@ func TestStart(t *testing.T) {
 	fb, err := ioutil.ReadAll(f)
 
 	assert.NoError(t, err)
-	assert.Equal(t, "[F1,F2,timestamp]\n[5,6, 160956492]\n", string(fb))
+	assert.Equal(t, "[F1,F2,timestamp]\n[5,6,1609564925]\n", string(fb))
 
 	cfg = config.Config{}
 	ctx = cfg.WithContext(context.Background())
