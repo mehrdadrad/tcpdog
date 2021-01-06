@@ -62,7 +62,7 @@ type Tracepoint struct {
 // Field represents a field
 type Field struct {
 	Name   string `yaml:"name"`
-	Func   string `yaml:"func,omitempty"`
+	Math   string `yaml:"math,omitempty"`
 	Filter string `yaml:"filter,omitempty"`
 }
 

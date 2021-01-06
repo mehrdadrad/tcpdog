@@ -33,8 +33,11 @@ type FieldAttrs struct {
 	DType     DType
 	CField    string
 	DS        string
+	UMath     string
+	Math      string
 	Func      string
 	Filter    string
+	Desc      string
 	DSNP      bool
 	BigEndian bool
 }
@@ -68,7 +71,9 @@ func getReqFieldsV4(cfgFields []config.Field) []FieldAttrs {
 				CType:  attrs.CType,
 				DS:     attrs.DS,
 				DSNP:   attrs.DSNP,
-				Func:   getValue(v.Func, attrs.Func),
+				UMath:  v.Math,
+				Math:   attrs.Math,
+				Func:   attrs.Func,
 				Filter: replaceNameWithCFieldV4(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField),
 			})
 		} else {
@@ -89,7 +94,9 @@ func getReqFieldsV6(cfgFields []config.Field) []FieldAttrs {
 				CType:  attrs.CType,
 				DS:     attrs.DS,
 				DSNP:   attrs.DSNP,
-				Func:   getValue(v.Func, attrs.Func),
+				UMath:  v.Math,
+				Math:   attrs.Math,
+				Func:   attrs.Func,
 				Filter: replaceNameWithCFieldV6(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField),
 			})
 		}

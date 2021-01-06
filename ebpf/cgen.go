@@ -19,14 +19,17 @@ type TracepointTemplate struct {
 	Suffix     int
 	Sample     int
 	TCPInfo    bool
+	ICSK       bool
 }
 
 // Init intializes tracepointTemplate
 func (t *TracepointTemplate) Init() {
 	for _, f := range append(t.Fields4, t.Fields6...) {
-		if f.DS == "tcpi" {
+		if strings.Contains(f.DS, "tcpi") {
 			t.TCPInfo = true
-			break
+		}
+		if strings.Contains(f.DS, "icsk") {
+			t.ICSK = true
 		}
 	}
 }

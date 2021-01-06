@@ -17,8 +17,8 @@ func TestGetBPFCode(t *testing.T) {
 
 	cfgFileds := map[string][]config.Field{
 		"custom_fields1": {
-			{Name: "SRTT", Func: "/1000", Filter: "SRTT>1000"},
-			{Name: "TotalRetrans", Func: "", Filter: ""},
+			{Name: "SRTT", Math: "/1000", Filter: "SRTT>1000"},
+			{Name: "TotalRetrans", Math: "", Filter: ""},
 			{Name: "SAddr"},
 			{Name: "DAddr"},
 		},

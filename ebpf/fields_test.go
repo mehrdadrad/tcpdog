@@ -10,8 +10,8 @@ import (
 
 func TestGetReqFields(t *testing.T) {
 	arg := []config.Field{
-		{Name: "SRTT", Func: "/1000", Filter: ">1000"},
-		{Name: "DPort", Func: "", Filter: ""},
+		{Name: "SRTT", Math: "/1000", Filter: ">1000"},
+		{Name: "DPort", Math: "", Filter: ""},
 	}
 
 	fields := getReqFieldsV4(arg)
