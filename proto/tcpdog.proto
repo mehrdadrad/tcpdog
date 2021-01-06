@@ -37,6 +37,8 @@ message Fields {
     int32 DsackDups = 21;
     int32 RateDelivered = 22;
     int32 RateInterval = 23;
+    string Hostname = 24;
+    int64 Timestamp = 25;
 }
 
 message Response {
