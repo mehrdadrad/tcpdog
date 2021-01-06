@@ -21,6 +21,13 @@ var (
 			CType:  u32,
 			Desc:   "RTT measurement: smoothed round trip time << 3 in usecs",
 		},
+		"RTT": {
+			DS:     "tcpi",
+			CField: "srtt_us",
+			CType:  u32,
+			Math:   ">> 3",
+			Desc:   "Round trip time",
+		},
 		"MDev": {
 			DS:     "tcpi",
 			CField: "mdev_us",
@@ -38,6 +45,13 @@ var (
 			CField: "rttvar_us",
 			CType:  u32,
 			Desc:   "RTT measurement: smoothed mdev_max",
+		},
+		"RcvRTT": {
+			DS:     "tcpi->rcv_rtt_est",
+			CField: "rtt_us",
+			CType:  u32,
+			DSNP:   true,
+			Desc:   "",
 		},
 		"TotalRetrans": {
 			DS:     "tcpi",
@@ -117,12 +131,12 @@ var (
 			DSNP:   true,
 			Desc:   "MSS requested by user in ioctl",
 		},
-		"RTT": {
+		"RACKRTT": {
 			DS:     "tcpi->rack",
 			CField: "rtt_us",
 			CType:  u32,
 			DSNP:   true,
-			Desc:   "Associated RTT",
+			Desc:   "Recently (s)acked - Associated RTT",
 		},
 		"MSSClamp": {
 			DS:     "tcpi->rx_opt",
@@ -268,6 +282,32 @@ var (
 			CField: "data_segs_out",
 			DS:     "tcpi",
 			Desc:   "Total number of data segments sent RFC4898",
+		},
+		"RcvSpace": {
+			DS:     "tcpi->rcvq_space",
+			CField: "space",
+			CType:  u32,
+			DSNP:   true,
+			Desc:   "",
+		},
+		"UnAcked": {
+			DS:     "tcpi",
+			CField: "packets_out",
+			CType:  u32,
+			Desc:   "",
+		},
+		"SAcked": {
+			DS:     "tcpi",
+			CField: "sacked_out",
+			CType:  u32,
+			Desc:   "",
+		},
+		"RTO": {
+			DS:     "icsk",
+			CField: "icsk_rto",
+			CType:  u32,
+			Func:   "",
+			Desc:   "",
 		},
 	}
 
