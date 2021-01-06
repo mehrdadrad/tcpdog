@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"os"
 	"sync"
 
 	pb "github.com/mehrdadrad/tcpdog/proto"
@@ -83,15 +84,16 @@ func structpb(ctx context.Context, stream pb.TCPDog_TracepointPBSClient, tp conf
 }
 
 func jsonpb(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
-	var (
-		buf *bytes.Buffer
-	)
+	var buf *bytes.Buffer
+
+	hostname, _ := os.Hostname()
 
 	for {
 		select {
 		case buf = <-ch:
 			m := pb.Fields{}
 			protojson.Unmarshal(buf.Bytes(), &m)
+			m.Hostname = hostname
 			if err := stream.Send(&m); err != nil {
 				return err
 			}
