@@ -15,6 +15,18 @@ var (
 			DS:     "tcpi",
 			Desc:   "Bytes of tcp header to send",
 		},
+		"NewState": {
+			CType:  u16,
+			CField: "newstate",
+			DS:     "args",
+			Desc:   "TCP current state",
+		},
+		"OldState": {
+			CType:  u16,
+			CField: "oldstate",
+			DS:     "args",
+			Desc:   "TCP previous state",
+		},
 		"SRTT": {
 			DS:     "tcpi",
 			CField: "srtt_us",
@@ -334,6 +346,7 @@ var (
 		"TCP_LISTEN":       10,
 		"TCP_CLOSING":      11,
 		"TCP_NEW_SYN_RECV": 12,
+		"TCP_ALL":          99,
 	}
 )
 

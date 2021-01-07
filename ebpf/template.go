@@ -79,9 +79,11 @@ const source = `
 		if (args->protocol != IPPROTO_TCP)
 			return 0;
 
+		{{if ne .TCPState "TCP_ALL"}}
 		if (args->newstate != {{.TCPState}}) {
 			return 0;
 		}
+		{{end}}
 		{{end}}
 
 		struct sock *sk = (struct sock *)args->skaddr;
