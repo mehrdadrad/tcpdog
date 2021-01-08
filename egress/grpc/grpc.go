@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/mehrdadrad/tcpdog/config"
-	"github.com/mehrdadrad/tcpdog/output/helper"
+	"github.com/mehrdadrad/tcpdog/egress/helper"
 )
 
 // StartStructPB sends fields to a grpc server with structpb type.

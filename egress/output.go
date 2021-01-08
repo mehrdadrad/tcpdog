@@ -7,11 +7,11 @@ import (
 	"sync"
 
 	"github.com/mehrdadrad/tcpdog/config"
-	"github.com/mehrdadrad/tcpdog/output/console"
-	"github.com/mehrdadrad/tcpdog/output/csv"
-	"github.com/mehrdadrad/tcpdog/output/grpc"
-	"github.com/mehrdadrad/tcpdog/output/jsonl"
-	"github.com/mehrdadrad/tcpdog/output/kafka"
+	"github.com/mehrdadrad/tcpdog/egress/console"
+	"github.com/mehrdadrad/tcpdog/egress/csv"
+	"github.com/mehrdadrad/tcpdog/egress/grpc"
+	"github.com/mehrdadrad/tcpdog/egress/jsonl"
+	"github.com/mehrdadrad/tcpdog/egress/kafka"
 )
 
 // Start starts an output based on the output type at configuration.
