@@ -70,7 +70,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	)
 
 	cfg := config.FromContext(ctx)
-	err = c.init(cfg.Output[tp.Output].Config, cfg.Fields[tp.Fields])
+	err = c.init(cfg.Egress[tp.Egress].Config, cfg.Fields[tp.Fields])
 	if err != nil {
 		return err
 	}

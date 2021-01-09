@@ -10,7 +10,7 @@ import (
 )
 
 var cfg = config.Config{
-	Output: map[string]config.OutputConfig{
+	Egress: map[string]config.EgressConfig{
 		"myoutput": {
 			Type: "grpc2",
 		},

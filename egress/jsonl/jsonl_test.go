@@ -16,7 +16,7 @@ import (
 func TestStart(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	tp := config.Tracepoint{
-		Output: "myoutput",
+		Egress: "myoutput",
 		Fields: "myfields",
 	}
 	ch := make(chan *bytes.Buffer, 1)
@@ -29,7 +29,7 @@ func TestStart(t *testing.T) {
 	filename := t.TempDir() + "testfile.jsonl"
 
 	cfg := config.Config{
-		Output: map[string]config.OutputConfig{
+		Egress: map[string]config.EgressConfig{
 			"myoutput": {
 				Type: "jsonl",
 				Config: map[string]string{

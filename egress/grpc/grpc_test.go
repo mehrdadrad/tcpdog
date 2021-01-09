@@ -78,7 +78,7 @@ func testStructPB(t *testing.T) {
 		},
 	}
 
-	tp := config.Tracepoint{Output: "foo", Fields: "fields01"}
+	tp := config.Tracepoint{Egress: "foo", Fields: "fields01"}
 	cfg := config.Config{
 		Fields: map[string][]config.Field{
 			"fields01": {
@@ -86,7 +86,7 @@ func testStructPB(t *testing.T) {
 				{Name: "F2"},
 			},
 		},
-		Output: map[string]config.OutputConfig{
+		Egress: map[string]config.EgressConfig{
 			"foo": {Config: map[string]string{
 				"server":   fmt.Sprintf(":%d", port),
 				"insecure": "true"}},

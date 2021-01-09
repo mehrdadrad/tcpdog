@@ -1,7 +1,7 @@
 package ebpf
 
 import (
-	"log"
+	"fmt"
 	"strings"
 
 	"github.com/mehrdadrad/tcpdog/config"
@@ -64,21 +64,18 @@ func (c CType) String() string {
 func getReqFieldsV4(cfgFields []config.Field) []FieldAttrs {
 	var reqFields []FieldAttrs
 
-	for _, v := range cfgFields {
-		if attrs, ok := fieldsModel4[v.Name]; ok {
-			reqFields = append(reqFields, FieldAttrs{
-				CField: attrs.CField,
-				CType:  attrs.CType,
-				DS:     attrs.DS,
-				DSNP:   attrs.DSNP,
-				UMath:  v.Math,
-				Math:   attrs.Math,
-				Func:   attrs.Func,
-				Filter: replaceNameWithCFieldV4(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField),
-			})
-		} else {
-			log.Fatal("unknown field")
-		}
+	for i, v := range cfgFields {
+		attrs := fieldsModel4[v.Name]
+		reqFields = append(reqFields, FieldAttrs{
+			CField: attrs.CField,
+			CType:  attrs.CType,
+			DS:     attrs.DS,
+			DSNP:   attrs.DSNP,
+			UMath:  v.Math,
+			Math:   attrs.Math,
+			Func:   attrs.Func,
+			Filter: replaceNameWithCFieldV4(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
+		})
 	}
 
 	return reqFields
@@ -87,19 +84,18 @@ func getReqFieldsV4(cfgFields []config.Field) []FieldAttrs {
 func getReqFieldsV6(cfgFields []config.Field) []FieldAttrs {
 	var reqFields []FieldAttrs
 
-	for _, v := range cfgFields {
-		if attrs, ok := fieldsModel6[v.Name]; ok {
-			reqFields = append(reqFields, FieldAttrs{
-				CField: attrs.CField,
-				CType:  attrs.CType,
-				DS:     attrs.DS,
-				DSNP:   attrs.DSNP,
-				UMath:  v.Math,
-				Math:   attrs.Math,
-				Func:   attrs.Func,
-				Filter: replaceNameWithCFieldV6(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField),
-			})
-		}
+	for i, v := range cfgFields {
+		attrs := fieldsModel6[v.Name]
+		reqFields = append(reqFields, FieldAttrs{
+			CField: attrs.CField,
+			CType:  attrs.CType,
+			DS:     attrs.DS,
+			DSNP:   attrs.DSNP,
+			UMath:  v.Math,
+			Math:   attrs.Math,
+			Func:   attrs.Func,
+			Filter: replaceNameWithCFieldV6(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
+		})
 	}
 
 	return reqFields
@@ -112,10 +108,10 @@ func getValue(v string, d string) string {
 	return d
 }
 
-func replaceNameWithCFieldV4(filter, name, cField string) string {
-	return strings.Replace(filter, name, "data4."+cField, -1)
+func replaceNameWithCFieldV4(filter, name, cField string, index int) string {
+	return strings.Replace(filter, name, fmt.Sprintf("data4.%s%d", cField, index), -1)
 }
 
-func replaceNameWithCFieldV6(filter, name, cField string) string {
-	return strings.Replace(filter, name, "data6."+cField, -1)
+func replaceNameWithCFieldV6(filter, name, cField string, index int) string {
+	return strings.Replace(filter, name, fmt.Sprintf("data6.%s%d", cField, index), -1)
 }

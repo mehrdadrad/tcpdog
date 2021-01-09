@@ -3,7 +3,6 @@ package ebpf
 import (
 	"bytes"
 	"errors"
-	"log"
 	"strings"
 	"text/template"
 
@@ -98,6 +97,6 @@ func (c *CGen) getTracepointBPFCode(index int, tp config.Tracepoint) (string, er
 	if err = tmpl.Execute(buf, tt); err != nil {
 		return "", err
 	}
-	log.Println(buf.String())
+
 	return buf.String(), nil
 }

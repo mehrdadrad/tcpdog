@@ -118,7 +118,7 @@ const source = `
 
 			{{- range $index,$value := .Fields4}}
 			{{if $value.Filter}}
-			{{printf "if (data4.%s%d %s) {" $value.CField $index $value.Filter}}
+			{{printf "if (%s) {" $value.Filter}}
 				return 0;
 			}
 			{{- end}}
@@ -175,7 +175,7 @@ const source = `
 
 			{{- range $index, $value := .Fields6}}
 			{{if $value.Filter}}
-			{{- printf "if (data6.%s%d %s) {" $value.CField $index $value.Filter}}
+			{{- printf "if (%s) {" $value.Filter}}
 				return 0;
 			}
 			{{- end}}

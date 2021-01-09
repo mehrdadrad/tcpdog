@@ -3,18 +3,17 @@ package main
 import (
 	"C"
 	"bytes"
+	"log"
+	"os"
 	"sync"
 
 	"github.com/sethvargo/go-signalcontext"
+	"go.uber.org/zap"
 
 	"github.com/mehrdadrad/tcpdog/cli"
 	"github.com/mehrdadrad/tcpdog/config"
 	"github.com/mehrdadrad/tcpdog/ebpf"
-	"github.com/mehrdadrad/tcpdog/output"
-)
-import (
-	"log"
-	"os"
+	"github.com/mehrdadrad/tcpdog/egress"
 )
 
 func main() {
@@ -26,7 +25,7 @@ func main() {
 	cfg := config.Get(r)
 	err = validation(cfg)
 	if err != nil {
-		log.Fatal(err)
+		cfg.Logger().Fatal("validation", zap.Error(err))
 	}
 
 	ctx, cancel := signalcontext.OnInterrupt()
@@ -45,13 +44,16 @@ func main() {
 
 	chMap := map[string]chan *bytes.Buffer{}
 	for _, tracepoint := range cfg.Tracepoints {
-		if _, ok := chMap[tracepoint.Output]; ok {
+		if _, ok := chMap[tracepoint.Egress]; ok {
 			continue
 		}
 
 		ch := make(chan *bytes.Buffer, 1000)
-		chMap[tracepoint.Output] = ch
-		output.Start(ctx, tracepoint, bufPool, ch)
+		chMap[tracepoint.Egress] = ch
+		err := egress.Start(ctx, tracepoint, bufPool, ch)
+		if err != nil {
+			cfg.Logger().Fatal("egress", zap.Error(err))
+		}
 	}
 
 	for index, tracepoint := range cfg.Tracepoints {
@@ -59,7 +61,7 @@ func main() {
 			Name:    tracepoint.Name,
 			Index:   index,
 			BufPool: bufPool,
-			OutChan: chMap[tracepoint.Output],
+			OutChan: chMap[tracepoint.Egress],
 			INet:    tracepoint.Inet,
 			Workers: tracepoint.Workers,
 			Fields:  cfg.GetTPFields(tracepoint.Fields),

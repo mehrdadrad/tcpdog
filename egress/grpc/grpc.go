@@ -3,7 +3,6 @@ package grpc
 import (
 	"bytes"
 	"context"
-	"log"
 	"os"
 	"sync"
 
@@ -18,20 +17,18 @@ import (
 // StartStructPB sends fields to a grpc server with structpb type.
 func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
-		err     error
-		stream  pb.TCPDog_TracepointPBSClient
-		conn    *grpc.ClientConn
-		backoff = helper.Backoff{}
+		err    error
+		stream pb.TCPDog_TracepointPBSClient
+		conn   *grpc.ClientConn
 	)
 
 	cfg := config.FromContext(ctx)
-	server, dialOpts := gRPCConfig(cfg.Output[tp.Output].Config)
+	server, dialOpts := gRPCConfig(cfg.Egress[tp.Egress].Config)
+	backoff := helper.NewBackoff(cfg)
 
 	go func() {
 		for {
-			if m := backoff.Next(); m != "" {
-				log.Printf("%s", m)
-			}
+			backoff.Next()
 
 			conn, err = grpc.Dial(server, dialOpts...)
 			if err != nil {
@@ -119,9 +116,7 @@ func Start(ctx context.Context, grpcConf map[string]string, bufpool *sync.Pool, 
 
 	go func() {
 		for {
-			if m := backoff.Next(); m != "" {
-				log.Printf("%s", err)
-			}
+			backoff.Next()
 
 			conn, err = grpc.Dial(server, dialOpts...)
 			if err != nil {

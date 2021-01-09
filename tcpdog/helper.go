@@ -29,9 +29,13 @@ func validation(cfg *config.Config) error {
 			return err
 		}
 
+		// egress
+		err = validationEgress(cfg)
+		if err != nil {
+			return err
+		}
+
 		// inet validation and default
-		// TODO
-		// output validation and default
 		// TODO
 	}
 
@@ -51,6 +55,15 @@ func validationFields(cfg *config.Config, name string) error {
 
 		cfg.Fields[name][i].Name = cf
 		cfg.Fields[name][i].Filter = strings.Replace(f.Filter, f.Name, cf, -1)
+	}
+	return nil
+}
+
+func validationEgress(cfg *config.Config) error {
+	for _, tracepoint := range cfg.Tracepoints {
+		if _, ok := cfg.Egress[tracepoint.Egress]; !ok {
+			return fmt.Errorf("egress not found: %s", tracepoint.Egress)
+		}
 	}
 	return nil
 }

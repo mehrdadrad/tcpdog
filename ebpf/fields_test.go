@@ -18,6 +18,6 @@ func TestGetReqFields(t *testing.T) {
 
 	assert.Len(t, fields, 2)
 	assert.Equal(t, "srtt_us", fields[0].CField)
-	assert.Equal(t, "/1000", fields[0].Func)
+	assert.Equal(t, "/1000", fields[0].UMath)
 	assert.Equal(t, ">1000", fields[0].Filter)
 }

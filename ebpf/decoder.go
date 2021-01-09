@@ -3,33 +3,33 @@ package ebpf
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"net"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type decoder struct {
-	v16 uint16
-	v32 uint32
-	v64 uint64
-
-	c uint16
-
-	v4 bool
-
-	ip net.IP
+	v16    uint16
+	v32    uint32
+	v64    uint64
+	c      uint16
+	v4     bool
+	ip     net.IP
+	logger *zap.Logger
 }
 
-func newDecoder(v4 bool) *decoder {
+func newDecoder(logger *zap.Logger, v4 bool) *decoder {
 	size := 4
 	if !v4 {
 		size = 32
 	}
 
 	return &decoder{
-		ip: make(net.IP, size),
-		v4: v4,
+		ip:     make(net.IP, size),
+		v4:     v4,
+		logger: logger,
 	}
 }
 
@@ -127,7 +127,7 @@ func (d *decoder) decode(data []byte, fields []string, buf *bytes.Buffer) {
 			d.c += 16
 
 		default:
-			log.Fatal("unknown data type")
+			d.logger.Fatal("decoder", zap.String("msg", "unknown data type"))
 		}
 	}
 

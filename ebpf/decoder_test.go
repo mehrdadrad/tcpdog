@@ -13,7 +13,7 @@ func TestDecoderV4(t *testing.T) {
 	expected := `"PID":1233651,"Task":"curl","NumSAcks":0,"SRTT":48583,"RTT":0,"TotalRetrans":0,"AdvMSS":1460,"BytesReceived":14629,"SegsIn":14,"SegsOut":11,"SAddr":"10.0.2.15","DAddr":"172.217.5.196","DPort":80`
 
 	buf := new(bytes.Buffer)
-	d := newDecoder(true)
+	d := newDecoder(nil, true)
 	d.decode(data, fields, buf)
 
 	assert.Contains(t, buf.String(), expected)
@@ -25,7 +25,7 @@ func TestDecoderV6(t *testing.T) {
 	expected := `"PID":1144795,"Task":"fakehttp","NumSAcks":0,"SRTT":339,"RTT":233,"TotalRetrans":0,"AdvMSS":65464,"BytesReceived":75,"SegsIn":6,"SegsOut":3,"SAddr":"::1","DAddr":"::1","DPort":39822`
 
 	buf := new(bytes.Buffer)
-	d := newDecoder(false)
+	d := newDecoder(nil, false)
 	d.decode(data, fields, buf)
 
 	assert.Contains(t, buf.String(), expected)
@@ -36,7 +36,7 @@ func BenchmarkDecoderV4(b *testing.B) {
 	buf := new(bytes.Buffer)
 	fields := []string{"PID", "Task", "NumSAcks", "SRTT", "RTT", "TotalRetrans", "AdvMSS", "BytesReceived", "SegsIn", "SegsOut", "SAddr", "DAddr", "DPort"}
 
-	d := newDecoder(true)
+	d := newDecoder(nil, true)
 	for i := 0; i < b.N; i++ {
 		d.decode(data, fields, buf)
 	}

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
 	bpf "github.com/iovisor/gobpf/bcc"
+	"go.uber.org/zap"
 
 	"github.com/mehrdadrad/tcpdog/config"
 )
@@ -33,7 +33,7 @@ type TP struct {
 func New(conf *config.Config) *BPF {
 	code, err := GetBPFCode(conf)
 	if err != nil {
-		log.Fatal(err)
+		conf.Logger().Fatal("ebpf", zap.Error(err))
 	}
 
 	m := bpf.NewModule(code, []string{})
@@ -43,9 +43,11 @@ func New(conf *config.Config) *BPF {
 
 // Start loads and attaches tracepoint and approperiate channel
 func (b *BPF) Start(ctx context.Context, tp TP) {
+	conf := config.FromContext(ctx)
+
 	trace, err := b.m.LoadTracepoint(fmt.Sprintf("sk_trace%d", tp.Index))
 	if err != nil {
-		log.Fatal(err)
+		conf.Logger().Fatal("ebpf", zap.Error(err))
 	}
 
 	b.m.AttachTracepoint(tp.Name, trace)
@@ -56,13 +58,13 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 
 		perfMap, err := bpf.InitPerfMap(table, ch, nil)
 		if err != nil {
-			log.Fatal(err)
+			conf.Logger().Fatal("ebpf", zap.Error(err))
 		}
 
 		for i := 0; i < tp.Workers; i++ {
 			go func(version int) {
 				data := []byte{}
-				d := newDecoder((version == 4))
+				d := newDecoder(conf.Logger(), (version == 4))
 
 				for {
 					select {
@@ -78,7 +80,7 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 					select {
 					case tp.OutChan <- buf:
 					default:
-						log.Println("output channel maxed out")
+						conf.Logger().Warn("ebpf", zap.String("msg", "egress channel maxed out"))
 					}
 				}
 			}(version)

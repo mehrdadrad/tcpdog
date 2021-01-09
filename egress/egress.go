@@ -1,9 +1,8 @@
-package output
+package egress
 
 import (
 	"bytes"
 	"context"
-	"log"
 	"sync"
 
 	"github.com/mehrdadrad/tcpdog/config"
@@ -15,23 +14,17 @@ import (
 )
 
 // Start starts an output based on the output type at configuration.
-func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) {
-	var (
-		output config.OutputConfig
-		err    error
-		ok     bool
-	)
+func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var err error
 
 	cfg := config.FromContext(ctx)
-	if output, ok = cfg.Output[tp.Output]; !ok {
-		log.Fatal("output not found:", tp.Output)
-	}
+	egress := cfg.Egress[tp.Egress]
 
-	switch output.Type {
+	switch egress.Type {
 	case "kafka":
-		err = kafka.New(ctx, output.Config, bufpool, ch)
+		err = kafka.New(ctx, egress.Config, bufpool, ch)
 	case "grpc":
-		err = grpc.Start(ctx, output.Config, bufpool, ch)
+		err = grpc.Start(ctx, egress.Config, bufpool, ch)
 	case "grpc-spb":
 		err = grpc.StartStructPB(ctx, tp, bufpool, ch)
 	case "csv":
@@ -39,10 +32,8 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	case "jsonl":
 		err = jsonl.Start(ctx, tp, bufpool, ch)
 	default:
-		err = console.New(ctx, output.Config, bufpool, ch)
+		err = console.New(ctx, egress.Config, bufpool, ch)
 	}
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }

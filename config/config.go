@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	yml "gopkg.in/yaml.v3"
 )
 
@@ -15,11 +17,13 @@ type ctxKey string
 type Config struct {
 	Tracepoints []Tracepoint
 	Fields      map[string][]Field
-	Output      map[string]OutputConfig
+	Egress      map[string]EgressConfig
+
+	logger *zap.Logger
 }
 
-// OutputConfig represents output's configuration
-type OutputConfig struct {
+// EgressConfig represents egress configuration
+type EgressConfig struct {
 	Type   string
 	Config map[string]string
 }
@@ -33,8 +37,12 @@ type CLIRequest struct {
 	Workers    int
 	Sample     int
 	TCPState   string
-	Output     string
+	Egress     string
 	Config     string
+}
+
+func (c *Config) Logger() *zap.Logger {
+	return c.logger
 }
 
 // WithContext returns new context including configuration
@@ -56,7 +64,7 @@ type Tracepoint struct {
 	Workers  int    `yaml:"workers"`
 	Inet     []int  `yaml:"inet"`
 	Geo      string `yaml:"geo"`
-	Output   string `yaml:"output"`
+	Egress   string `yaml:"egress"`
 }
 
 // Field represents a field
@@ -107,6 +115,11 @@ func setDefault(conf *Config) {
 			conf.Tracepoints[i].Workers = 1
 		}
 	}
+
+	// set default logger
+	if conf.logger == nil {
+		conf.logger = GetDefaultLogger()
+	}
 }
 
 // Get returns the configuration based on the file or cli
@@ -155,13 +168,13 @@ func cliToConfig(cli *CLIRequest) (*Config, error) {
 				Workers:  cli.Workers,
 				Sample:   cli.Sample,
 				Inet:     inet,
-				Output:   "console",
+				Egress:   "console",
 			},
 		},
 		Fields: map[string][]Field{
 			"cli": cliFieldsStrToSlice(cli.Fields),
 		},
-		Output: map[string]OutputConfig{
+		Egress: map[string]EgressConfig{
 			"console": {
 				Type: "console",
 			},
@@ -179,4 +192,26 @@ func cliFieldsStrToSlice(fs []string) []Field {
 	}
 
 	return fields
+}
+
+// GetDefaultLogger creates default zap logger.
+func GetDefaultLogger() *zap.Logger {
+	var cfg = zap.Config{
+		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		Encoding:         "console",
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	cfg.EncoderConfig.EncodeCaller = nil
+	cfg.DisableStacktrace = true
+
+	logger, err := cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return logger
 }

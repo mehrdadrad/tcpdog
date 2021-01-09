@@ -9,15 +9,18 @@ import (
 	"time"
 
 	pbstruct "github.com/golang/protobuf/ptypes/struct"
+	"go.uber.org/zap"
 
 	"github.com/mehrdadrad/tcpdog/config"
 )
 
 var comma = []byte(",")[0]
 
+// Backoff represents backoff strategy
 type Backoff struct {
 	duration time.Duration
 	last     time.Time
+	cfg      *config.Config
 }
 
 // StructPB represents the conversion between
@@ -104,15 +107,21 @@ func (s *StructPB) Unmarshal(buf *bytes.Buffer) *pbstruct.Struct {
 	return r
 }
 
-func (b *Backoff) Next() string {
+// NewBackoff constructs a new backoff
+func NewBackoff(cfg *config.Config) *Backoff {
+	return &Backoff{cfg: cfg}
+}
+
+// Next waits for a specific backoff time
+func (b *Backoff) Next() {
 	if b.duration == 0 {
 		b.reset()
-		return ""
+		return
 	}
 
 	if time.Since(b.last).Seconds() > float64(30*60) {
 		b.reset()
-		return ""
+		return
 	}
 
 	if time.Since(b.last).Seconds() < float64(60) {
@@ -122,9 +131,8 @@ func (b *Backoff) Next() string {
 		}
 	}
 
+	b.cfg.Logger().Info("backoff", zap.String("delay", fmt.Sprintf("%.2fs", b.duration.Seconds())))
 	time.Sleep(b.duration)
-
-	return fmt.Sprintf("retrying after %.2f seconds ...", b.duration.Seconds())
 }
 
 func (b *Backoff) reset() {
