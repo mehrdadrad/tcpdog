@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 
@@ -53,4 +54,13 @@ func Load(file string) (*Config, error) {
 	}
 
 	return c, nil
+}
+
+func Transform(cfg map[string]interface{}, d interface{}) error {
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, d)
 }

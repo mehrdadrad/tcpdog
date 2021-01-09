@@ -21,7 +21,7 @@ type jsonl struct {
 
 var comma = []byte(",")[0]
 
-func (j *jsonl) init(conf map[string]string, fields []config.Field) error {
+func (j *jsonl) init(conf map[string]interface{}, fields []config.Field) error {
 	var err error
 
 	for _, f := range fields {
@@ -29,7 +29,11 @@ func (j *jsonl) init(conf map[string]string, fields []config.Field) error {
 		j.fieldsName = append(j.fieldsName, f.Name)
 	}
 
-	filename := conf["filename"]
+	filename, ok := conf["filename"].(string)
+	if !ok {
+		return fmt.Errorf("file has not been configured")
+	}
+
 	j.file, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	return err

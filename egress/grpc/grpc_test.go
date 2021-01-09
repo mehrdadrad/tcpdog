@@ -87,16 +87,22 @@ func testStructPB(t *testing.T) {
 			},
 		},
 		Egress: map[string]config.EgressConfig{
-			"foo": {Config: map[string]string{
-				"server":   fmt.Sprintf(":%d", port),
-				"insecure": "true"}},
+			"foo": {
+				Config: map[string]interface{}{
+					"server":   fmt.Sprintf(":%d", port),
+					"insecure": true,
+				},
+			},
 		},
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = cfg.WithContext(ctx)
 	ch <- bytes.NewBufferString(`{"F1":5,"F2":6,"Timestamp":1609564925}`)
-	StartStructPB(ctx, tp, bufPool, ch)
-	time.Sleep(time.Second)
+	err := StartStructPB(ctx, tp, bufPool, ch)
+	assert.NoError(t, err)
+
+	time.Sleep(1 * time.Second)
 
 	hostname, _ := os.Hostname()
 
@@ -112,20 +118,35 @@ func testStructPB(t *testing.T) {
 
 func testProtoJSON(t *testing.T) {
 	ch := make(chan *bytes.Buffer, 1)
-	ctx, cancel := context.WithCancel(context.Background())
 	bufPool := &sync.Pool{
 		New: func() interface{} {
 			return new(bytes.Buffer)
 		},
 	}
 
-	grpcConf := map[string]string{
-		"server":   fmt.Sprintf(":%d", port),
-		"insecure": "true",
+	conf := config.Config{
+		Egress: map[string]config.EgressConfig{
+			"foo": {
+				Type: "grpc",
+				Config: map[string]interface{}{
+					"server":   fmt.Sprintf(":%d", port),
+					"insecure": true,
+				},
+			},
+		},
+	}
+
+	ctx := conf.WithContext(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
+
+	tp := config.Tracepoint{
+		Egress: "foo",
 	}
 
 	ch <- bytes.NewBufferString(`{"SRTT":5,"AdvMSS":6,"Timestamp":1609564925}`)
-	Start(ctx, grpcConf, bufPool, ch)
+	err := Start(ctx, tp, bufPool, ch)
+	assert.NoError(t, err)
+
 	time.Sleep(time.Second)
 
 	hostname, _ := os.Hostname()

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,7 +26,7 @@ type Config struct {
 // EgressConfig represents egress configuration
 type EgressConfig struct {
 	Type   string
-	Config map[string]string
+	Config map[string]interface{}
 }
 
 // CLIRequest represents cli requests.
@@ -214,4 +215,13 @@ func GetDefaultLogger() *zap.Logger {
 	}
 
 	return logger
+}
+
+func Transform(cfg map[string]interface{}, d interface{}) error {
+	b, err := json.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(b, d)
 }

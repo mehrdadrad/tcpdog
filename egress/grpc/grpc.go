@@ -17,20 +17,25 @@ import (
 // StartStructPB sends fields to a grpc server with structpb type.
 func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
-		err    error
 		stream pb.TCPDog_TracepointPBSClient
 		conn   *grpc.ClientConn
 	)
 
 	cfg := config.FromContext(ctx)
-	server, dialOpts := gRPCConfig(cfg.Egress[tp.Egress].Config)
 	backoff := helper.NewBackoff(cfg)
+
+	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
+	if err != nil {
+		return err
+	}
+
+	opts := dialOpts(gCfg)
 
 	go func() {
 		for {
 			backoff.Next()
 
-			conn, err = grpc.Dial(server, dialOpts...)
+			conn, err = grpc.Dial(gCfg.Server, opts...)
 			if err != nil {
 				continue
 			}
@@ -104,21 +109,27 @@ func jsonpb(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *syn
 }
 
 // Start sends fields to a grpc server
-func Start(ctx context.Context, grpcConf map[string]string, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
-		err     error
-		stream  pb.TCPDog_TracepointClient
-		conn    *grpc.ClientConn
-		backoff = helper.Backoff{}
+		stream pb.TCPDog_TracepointClient
+		conn   *grpc.ClientConn
 	)
 
-	server, dialOpts := gRPCConfig(grpcConf)
+	cfg := config.FromContext(ctx)
+	backoff := helper.NewBackoff(cfg)
+
+	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
+	if err != nil {
+		return err
+	}
+
+	opts := dialOpts(gCfg)
 
 	go func() {
 		for {
 			backoff.Next()
 
-			conn, err = grpc.Dial(server, dialOpts...)
+			conn, err = grpc.Dial(gCfg.Server, opts...)
 			if err != nil {
 				continue
 			}
@@ -142,11 +153,31 @@ func Start(ctx context.Context, grpcConf map[string]string, bufpool *sync.Pool, 
 	return nil
 }
 
-func gRPCConfig(cfg map[string]string) (string, []grpc.DialOption) {
-	opts := []grpc.DialOption{}
-	if cfg["insecure"] == "true" {
+type grpcConf struct {
+	Server   string
+	Insecure bool
+}
+
+func gRPCConfig(cfg map[string]interface{}) (*grpcConf, error) {
+	// default config
+	gCfg := &grpcConf{
+		Server:   "localhost:8085",
+		Insecure: true,
+	}
+
+	if err := config.Transform(cfg, gCfg); err != nil {
+		return nil, err
+	}
+
+	return gCfg, nil
+}
+
+func dialOpts(gCfg *grpcConf) []grpc.DialOption {
+	var opts []grpc.DialOption
+
+	if gCfg.Insecure {
 		opts = append(opts, grpc.WithInsecure())
 	}
 
-	return cfg["server"], opts
+	return opts
 }

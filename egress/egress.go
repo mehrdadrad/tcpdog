@@ -22,9 +22,9 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 
 	switch egress.Type {
 	case "kafka":
-		err = kafka.New(ctx, egress.Config, bufpool, ch)
+		err = kafka.New(ctx, tp, bufpool, ch)
 	case "grpc":
-		err = grpc.Start(ctx, egress.Config, bufpool, ch)
+		err = grpc.Start(ctx, tp, bufpool, ch)
 	case "grpc-spb":
 		err = grpc.StartStructPB(ctx, tp, bufpool, ch)
 	case "csv":
@@ -32,7 +32,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	case "jsonl":
 		err = jsonl.Start(ctx, tp, bufpool, ch)
 	default:
-		err = console.New(ctx, egress.Config, bufpool, ch)
+		err = console.New(ctx, tp, bufpool, ch)
 	}
 
 	return err

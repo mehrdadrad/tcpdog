@@ -16,7 +16,7 @@ import (
 func TestStart(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	tp := config.Tracepoint{
-		Egress: "myoutput",
+		Egress: "myegress",
 		Fields: "myfields",
 	}
 	ch := make(chan *bytes.Buffer, 1)
@@ -30,9 +30,9 @@ func TestStart(t *testing.T) {
 
 	cfg := config.Config{
 		Egress: map[string]config.EgressConfig{
-			"myoutput": {
+			"myegress": {
 				Type: "jsonl",
-				Config: map[string]string{
+				Config: map[string]interface{}{
 					"filename": filename,
 				},
 			},
@@ -62,7 +62,16 @@ func TestStart(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "[F1,F2,timestamp]\n[5,6,1609564925]\n", string(fb))
 
-	cfg = config.Config{}
+	cfg = config.Config{
+		Egress: map[string]config.EgressConfig{
+			"myegress": {
+				Type: "jsonl",
+				Config: map[string]interface{}{
+					"filename": "",
+				},
+			},
+		},
+	}
 	ctx = cfg.WithContext(context.Background())
 	err = Start(ctx, tp, bufPool, ch)
 	assert.Error(t, err)

@@ -1,8 +1,9 @@
 package influxdb
 
 import (
-	"encoding/json"
 	"log"
+
+	"github.com/mehrdadrad/tcpdog/config"
 )
 
 type dbConfig struct {
@@ -16,11 +17,6 @@ type dbConfig struct {
 }
 
 func influxConfig(cfg map[string]interface{}) *dbConfig {
-	b, err := json.Marshal(cfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// default configuration
 	conf := &dbConfig{
 		URL:        "http://localhost:8086",
@@ -31,8 +27,7 @@ func influxConfig(cfg map[string]interface{}) *dbConfig {
 		Workers:    2,
 	}
 
-	err = json.Unmarshal(b, conf)
-	if err != nil {
+	if err := config.Transform(cfg, conf); err != nil {
 		log.Fatal(err)
 	}
 

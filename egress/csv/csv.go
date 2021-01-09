@@ -21,7 +21,7 @@ type csv struct {
 
 var comma = []byte(",")[0]
 
-func (c *csv) init(conf map[string]string, fields []config.Field) error {
+func (c *csv) init(conf map[string]interface{}, fields []config.Field) error {
 	var err error
 
 	for _, f := range fields {
@@ -29,7 +29,11 @@ func (c *csv) init(conf map[string]string, fields []config.Field) error {
 		c.fieldsName = append(c.fieldsName, f.Name)
 	}
 
-	filename := conf["filename"]
+	filename, ok := conf["filename"].(string)
+	if !ok {
+		return fmt.Errorf("file has not been configured")
+	}
+
 	c.file, err = os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	return err
