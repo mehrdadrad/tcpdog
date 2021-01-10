@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/mehrdadrad/tcpdog/config"
@@ -66,4 +67,9 @@ func validationEgress(cfg *config.Config) error {
 		}
 	}
 	return nil
+}
+
+func exit(err error) {
+	fmt.Println(err)
+	os.Exit(1)
 }

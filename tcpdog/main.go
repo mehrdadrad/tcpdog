@@ -3,7 +3,6 @@ package main
 import (
 	"C"
 	"bytes"
-	"log"
 	"os"
 	"sync"
 
@@ -19,14 +18,16 @@ import (
 func main() {
 	r, err := cli.Get(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		exit(err)
 	}
 
 	cfg := config.Get(r)
 	err = validation(cfg)
 	if err != nil {
-		cfg.Logger().Fatal("validation", zap.Error(err))
+		exit(err)
 	}
+
+	logger := cfg.Logger()
 
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
@@ -52,7 +53,7 @@ func main() {
 		chMap[tracepoint.Egress] = ch
 		err := egress.Start(ctx, tracepoint, bufPool, ch)
 		if err != nil {
-			cfg.Logger().Fatal("egress", zap.Error(err))
+			logger.Fatal("egress", zap.Error(err))
 		}
 	}
 
