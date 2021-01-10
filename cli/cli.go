@@ -1,7 +1,13 @@
 package cli
 
 import (
+	"errors"
+	"io"
+	"log"
+	"os/exec"
+	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/mehrdadrad/tcpdog/config"
 	cli "github.com/urfave/cli/v2"
@@ -35,6 +41,10 @@ func Get(args []string) (*config.CLIRequest, error) {
 func action(r *config.CLIRequest) cli.ActionFunc {
 	return func(c *cli.Context) error {
 
+		if err := checkSudo(); err != nil {
+			return err
+		}
+
 		r.Tracepoint = c.String("tp")
 		r.Fields = strings.Split(c.String("fields"), ",")
 		r.IPv4 = c.Bool("4")
@@ -45,5 +55,42 @@ func action(r *config.CLIRequest) cli.ActionFunc {
 		r.Config = c.String("config")
 
 		return nil
+	}
+}
+
+func checkSudo() error {
+	cmd := exec.Command("id", "-u")
+	output, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	id, err := strconv.Atoi(string(output[:len(output)-1]))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if id != 0 {
+		return errors.New("root permission required")
+	}
+
+	return nil
+}
+
+func init() {
+	cli.AppHelpTemplate = `usage: {{.HelpName}} options
+	
+options:
+
+   {{range .VisibleFlags}}{{.}}
+   {{end}}
+`
+	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
+		funcMap := template.FuncMap{
+			"join": strings.Join,
+		}
+		t := template.Must(template.New("help").Funcs(funcMap).Parse(templ))
+		t.Execute(w, data)
+		cli.OsExiter(0)
 	}
 }
