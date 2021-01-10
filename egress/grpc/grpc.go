@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	pb "github.com/mehrdadrad/tcpdog/proto"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -116,6 +117,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	)
 
 	cfg := config.FromContext(ctx)
+	logger := cfg.Logger()
 	backoff := helper.NewBackoff(cfg)
 
 	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
@@ -131,17 +133,20 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 
 			conn, err = grpc.Dial(gCfg.Server, opts...)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
 			client := pb.NewTCPDogClient(conn)
 			stream, err = client.Tracepoint(ctx)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
 			err = jsonpb(ctx, stream, bufpool, ch)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
