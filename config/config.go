@@ -3,8 +3,8 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"go.uber.org/zap"
@@ -19,6 +19,7 @@ type Config struct {
 	Tracepoints []Tracepoint
 	Fields      map[string][]Field
 	Egress      map[string]EgressConfig
+	Log         *zap.Config
 
 	logger *zap.Logger
 }
@@ -119,7 +120,7 @@ func setDefault(conf *Config) {
 
 	// set default logger
 	if conf.logger == nil {
-		conf.logger = GetDefaultLogger()
+		conf.logger = getDefaultLogger()
 	}
 }
 
@@ -137,14 +138,17 @@ func Get(cli *CLIRequest) *Config {
 	if cli.Config != "" {
 		config, err = load(cli.Config)
 		if err != nil {
-			log.Fatal(err)
+			exit(err)
 		}
+
+		config.logger = getLogger(config.Log)
+
 		return config
 	}
 
 	config, err = cliToConfig(cli)
 	if err != nil {
-		log.Fatal(err)
+		exit(err)
 	}
 
 	return config
@@ -195,8 +199,8 @@ func cliFieldsStrToSlice(fs []string) []Field {
 	return fields
 }
 
-// GetDefaultLogger creates default zap logger.
-func GetDefaultLogger() *zap.Logger {
+// getDefaultLogger creates default zap logger.
+func getDefaultLogger() *zap.Logger {
 	var cfg = zap.Config{
 		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
 		EncoderConfig:    zap.NewProductionEncoderConfig(),
@@ -209,19 +213,40 @@ func GetDefaultLogger() *zap.Logger {
 	cfg.EncoderConfig.EncodeCaller = nil
 	cfg.DisableStacktrace = true
 
-	logger, err := cfg.Build()
+	logger, _ := cfg.Build()
+
+	return logger
+}
+
+func getLogger(zCfg *zap.Config) *zap.Logger {
+	if zCfg == nil {
+		return nil
+	}
+
+	zCfg.Encoding = "console"
+	zCfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	zCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	zCfg.EncoderConfig.EncodeCaller = nil
+	zCfg.DisableStacktrace = true
+
+	logger, err := zCfg.Build()
 	if err != nil {
-		panic(err)
+		exit(err)
 	}
 
 	return logger
 }
 
-func Transform(cfg map[string]interface{}, d interface{}) error {
+func Transform(cfg interface{}, d interface{}) error {
 	b, err := json.Marshal(cfg)
 	if err != nil {
 		return err
 	}
 
 	return json.Unmarshal(b, d)
+}
+
+func exit(err error) {
+	fmt.Println(err)
+	os.Exit(1)
 }
