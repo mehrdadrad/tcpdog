@@ -43,14 +43,16 @@ func New(conf *config.Config) *BPF {
 
 // Start loads and attaches tracepoint and approperiate channel
 func (b *BPF) Start(ctx context.Context, tp TP) {
-	conf := config.FromContext(ctx)
+	logger := config.FromContext(ctx).Logger()
 
 	trace, err := b.m.LoadTracepoint(fmt.Sprintf("sk_trace%d", tp.Index))
 	if err != nil {
-		conf.Logger().Fatal("ebpf", zap.Error(err))
+		logger.Fatal("ebpf", zap.Error(err))
 	}
 
-	b.m.AttachTracepoint(tp.Name, trace)
+	if err := b.m.AttachTracepoint(tp.Name, trace); err != nil {
+		logger.Fatal("ebpf", zap.Error(err))
+	}
 
 	for _, version := range tp.INet {
 		table := bpf.NewTable(b.m.TableId(fmt.Sprintf("ipv%d_events%d", version, tp.Index)), b.m)
@@ -58,13 +60,13 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 
 		perfMap, err := bpf.InitPerfMap(table, ch, nil)
 		if err != nil {
-			conf.Logger().Fatal("ebpf", zap.Error(err))
+			logger.Fatal("ebpf", zap.Error(err))
 		}
 
 		for i := 0; i < tp.Workers; i++ {
 			go func(version int) {
 				data := []byte{}
-				d := newDecoder(conf.Logger(), (version == 4))
+				d := newDecoder(logger, (version == 4))
 
 				for {
 					select {
@@ -80,7 +82,7 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 					select {
 					case tp.OutChan <- buf:
 					default:
-						conf.Logger().Warn("ebpf", zap.String("msg", "egress channel maxed out"))
+						logger.Warn("ebpf", zap.String("msg", "egress channel maxed out"))
 					}
 				}
 			}(version)
