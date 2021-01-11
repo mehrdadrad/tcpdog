@@ -7,13 +7,15 @@ import (
 )
 
 type dbConfig struct {
-	URL        string `json:"url"`
+	URL        string `yaml:"url"`
 	Org        string
 	Bucket     string
 	Timeout    uint
 	MaxRetries uint
 	BatchSize  uint
 	Workers    uint
+
+	GeoField string `yaml:"geoField"`
 }
 
 func influxConfig(cfg map[string]interface{}) *dbConfig {
@@ -25,6 +27,7 @@ func influxConfig(cfg map[string]interface{}) *dbConfig {
 		MaxRetries: 10,
 		BatchSize:  200,
 		Workers:    2,
+		GeoField:   "DAddr",
 	}
 
 	if err := config.Transform(cfg, conf); err != nil {
