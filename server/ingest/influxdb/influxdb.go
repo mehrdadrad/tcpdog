@@ -24,16 +24,16 @@ type influxdb struct {
 func Start(ctx context.Context, ch chan *pb.FieldsPBS) {
 	var g geo.Geoer
 
-	dCfg := influxConfig(config.FromContext(ctx).Ingest.Config)
-	gCfg := config.FromContext(ctx).Geo
+	cfg := config.FromContext(ctx)
+	dCfg := influxConfig(cfg.Ingest.Config)
 
 	client := influxdb2.NewClientWithOptions(dCfg.URL, "", influxdbOpts(dCfg))
 	writeAPI := client.WriteAPI(dCfg.Org, dCfg.Bucket)
 
 	// if geo is available
-	if v, ok := geo.Reg[gCfg.Type]; ok {
+	if v, ok := geo.Reg[cfg.Geo.Type]; ok {
 		g = v
-		g.Init(gCfg.Config)
+		g.Init(cfg.Logger(), cfg.Geo.Config)
 	}
 
 	i := influxdb{g: g, cfg: dCfg}

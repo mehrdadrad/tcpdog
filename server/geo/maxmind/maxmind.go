@@ -46,12 +46,12 @@ func (g *Geo) Init(logger *zap.Logger, cfg map[string]string) {
 
 	g.cityDB, err = maxminddb.Open(cfg["path-city"])
 	if err != nil {
-		logger.Error("maxmind", zap.Error(err))
+		logger.Fatal("maxmind", zap.Error(err))
 	}
 
 	g.asnDB, err = geoip2.Open(cfg["path-asn"])
 	if err != nil {
-		logger.Error("maxmind", zap.Error(err))
+		logger.Fatal("maxmind", zap.Error(err))
 	}
 
 	g.logger = logger

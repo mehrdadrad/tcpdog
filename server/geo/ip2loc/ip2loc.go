@@ -1,15 +1,15 @@
 package ip2loc
 
 import (
-	"log"
-
 	"github.com/ip2location/ip2location-go"
+	"go.uber.org/zap"
 )
 
 var db *ip2location.DB
 
 // Geo represents ip2location
 type Geo struct {
+	logger  *zap.Logger
 	usCodes map[string]string
 }
 
@@ -21,20 +21,22 @@ func New() *Geo {
 }
 
 // Init initializes ip2location database
-func (i *Geo) Init(cfg map[string]string) {
+func (g *Geo) Init(logger *zap.Logger, cfg map[string]string) {
 	var err error
 
 	db, err = ip2location.OpenDB(cfg["path"])
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("ip2loc", zap.Error(err))
 	}
+
+	g.logger = logger
 }
 
 // Get returns ip address geo information
-func (i *Geo) Get(ip string) map[string]string {
+func (g *Geo) Get(ip string) map[string]string {
 	info, err := db.Get_all(ip)
 	if err != nil {
-		log.Println(err)
+		g.logger.Error("ip2loc", zap.Error(err))
 		return nil
 	}
 	return map[string]string{
@@ -42,7 +44,7 @@ func (i *Geo) Get(ip string) map[string]string {
 		"Country": info.Country_long,
 		"Region":  info.Region,
 		"City":    info.City,
-		"USCode":  i.usCodes[info.Region],
+		"CSCode":  g.usCodes[info.Region],
 	}
 }
 
