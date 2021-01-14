@@ -23,6 +23,7 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 	)
 
 	cfg := config.FromContext(ctx)
+	logger := cfg.Logger()
 	backoff := helper.NewBackoff(cfg)
 
 	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
@@ -38,17 +39,20 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 
 			conn, err = grpc.Dial(gCfg.Server, opts...)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
 			client := pb.NewTCPDogClient(conn)
 			stream, err = client.TracepointPBS(ctx)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
 			err = structpb(ctx, stream, tp, bufpool, ch)
 			if err != nil {
+				logger.Warn("grpc", zap.Error(err))
 				continue
 			}
 
@@ -86,10 +90,11 @@ func structpb(ctx context.Context, stream pb.TCPDog_TracepointPBSClient, tp conf
 	}
 }
 
-func jsonpb(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
-	var buf *bytes.Buffer
-
-	hostname, _ := os.Hostname()
+func protobuf(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		buf         *bytes.Buffer
+		hostname, _ = os.Hostname()
+	)
 
 	for {
 		select {
@@ -144,7 +149,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 				continue
 			}
 
-			err = jsonpb(ctx, stream, bufpool, ch)
+			err = protobuf(ctx, stream, bufpool, ch)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
 				continue
