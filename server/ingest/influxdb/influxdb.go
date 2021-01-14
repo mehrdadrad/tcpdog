@@ -72,8 +72,11 @@ func (i *influxdb) pWorker(ctx context.Context, ch chan *pb.FieldsPBS, pCh chan 
 
 // point returns influxdb point with geo (if available)
 func (i *influxdb) point(f *pb.FieldsPBS) *write.Point {
-	tags := map[string]string{}
-	fields := map[string]interface{}{}
+	var (
+		tags      = map[string]string{}
+		fields    = map[string]interface{}{}
+		timestamp time.Time
+	)
 
 	for key, field := range f.Fields.Fields {
 		if value, ok := field.GetKind().(*structpb.Value_StringValue); ok {
@@ -84,12 +87,14 @@ func (i *influxdb) point(f *pb.FieldsPBS) *write.Point {
 				continue
 			}
 			tags[key] = value.StringValue
-		} else {
+		} else if key != "Timestamp" {
 			fields[key] = field.GetNumberValue()
+		} else {
+			timestamp = time.Unix(int64(field.GetNumberValue()), 0)
 		}
 	}
 
-	return influxdb2.NewPoint("tcpdog", tags, fields, time.Now())
+	return influxdb2.NewPoint("tcpdog", tags, fields, timestamp)
 }
 
 // influxdbOpts returns influxdb options
