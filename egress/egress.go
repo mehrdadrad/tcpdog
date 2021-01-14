@@ -22,8 +22,8 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 
 	switch egress.Type {
 	case "kafka":
-		err = kafka.New(ctx, tp, bufpool, ch)
-	case "grpc":
+		err = kafka.Start(ctx, tp, bufpool, ch)
+	case "grpc-pb":
 		err = grpc.Start(ctx, tp, bufpool, ch)
 	case "grpc-spb":
 		err = grpc.StartStructPB(ctx, tp, bufpool, ch)

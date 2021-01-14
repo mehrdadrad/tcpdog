@@ -3,36 +3,158 @@ package kafka
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"os"
 	"sync"
 
+	"github.com/Shopify/sarama"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/egress/helper"
+	pb "github.com/mehrdadrad/tcpdog/proto"
 )
 
-// https://pkg.go.dev/google.golang.org/protobuf/encoding/protojson
-
-// KafkaConfig represents Kafka configuration
-type KafkaConfig struct {
-	Brokers        []string `yaml:"brokers"`
-	Compression    string   `yaml:"compression" `
-	RetryMax       int      `yaml:"retry-max"`
-	RequestSizeMax int32    `yaml:"request-size-max"`
-	RetryBackoff   int      `yaml:"retry-backoff"`
-	TLSEnabled     bool     `yaml:"tls-enabled"`
-	TLSCertFile    string   `yaml:"tls-cert"`
-	TLSKeyFile     string   `yaml:"tls-key"`
-	CAFile         string   `yaml:"ca-file"`
-	TLSSkipVerify  bool     `yaml:"tls-skip-verify"`
-	SASLUsername   string   `yaml:"sasl-username"`
-	SASLPassword   string   `yaml:"sasl-password"`
+type kafka struct {
+	bufpool  *sync.Pool
+	dCh      chan *bytes.Buffer
+	bCh      chan []byte
+	jsonTail []byte
 }
 
-func New(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
-	//cfg := config.FromContext(ctx)
-	// := cfg.Egress[tp.Egress].Config
-	//_ = egress
+// Start starts producing the requested fields to kafka cluster.
+func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+	var (
+		cfg    = config.FromContext(ctx)
+		kCfg   = kafkaConfig(cfg.Egress[tp.Egress].Config)
+		sCfg   = saramaConfig(kCfg)
+		logger = cfg.Logger()
+	)
+
+	if err := sCfg.Validate(); err != nil {
+		return err
+	}
+
+	producer, err := sarama.NewAsyncProducer(kCfg.Brokers, sCfg)
+	if err != nil {
+		return err
+	}
+
+	k := kafka{
+		bufpool: bufpool,
+		dCh:     ch,
+	}
+
+	k.hostname()
+
+	switch kCfg.Serialization {
+	case "spb":
+		k.bCh = make(chan []byte, 1000)
+		for i := 0; i < kCfg.Workers; i++ {
+			go k.workerSPB(ctx, cfg.Fields[tp.Fields])
+		}
+	case "pb":
+		k.bCh = make(chan []byte, 1000)
+		for i := 0; i < kCfg.Workers; i++ {
+			go k.workerPB(ctx, cfg.Fields[tp.Fields])
+		}
+	}
+
+	go func() {
+		for {
+			select {
+			//  protobuf (pb) and struct protobuf (spb) serializations
+			case b := <-k.bCh:
+				select {
+				case producer.Input() <- &sarama.ProducerMessage{
+					Topic: kCfg.Topic,
+					Value: sarama.ByteEncoder(b),
+				}:
+				case err := <-producer.Errors():
+					logger.Error("kafka", zap.Error(err))
+				}
+
+				// json serialization
+			case buf := <-k.dCh:
+				select {
+				case producer.Input() <- &sarama.ProducerMessage{
+					Topic: kCfg.Topic,
+					Value: sarama.ByteEncoder(k.addHostname(buf)),
+				}:
+				case err := <-producer.Errors():
+					logger.Error("kafka", zap.Error(err))
+				}
+
+				k.bufpool.Put(buf)
+
+			case <-ctx.Done():
+			}
+		}
+	}()
+
 	return nil
 }
 
-func kafkaConf(cfg map[string]interface{}) {
+// struct protobuf worker
+func (k *kafka) workerSPB(ctx context.Context, fields []config.Field) {
+	spb := helper.NewStructPB(fields)
+	logger := config.FromContext(ctx).Logger()
 
+	for {
+		select {
+		case buf := <-k.dCh:
+			a := &pb.FieldsPBS{
+				Fields: spb.Unmarshal(buf),
+			}
+
+			b, err := proto.Marshal(a)
+			if err != nil {
+				logger.Error("kafka", zap.Error(err))
+			}
+
+			k.bCh <- b
+			k.bufpool.Put(buf)
+		case <-ctx.Done():
+			return
+		}
+	}
+
+}
+
+// protobuf worker
+func (k *kafka) workerPB(ctx context.Context, fields []config.Field) {
+	logger := config.FromContext(ctx).Logger()
+	hostname, _ := os.Hostname()
+
+	for {
+		select {
+		case buf := <-k.dCh:
+			m := pb.Fields{}
+			protojson.Unmarshal(buf.Bytes(), &m)
+			m.Hostname = hostname
+			b, err := proto.Marshal(&m)
+			if err != nil {
+				logger.Error("kafka", zap.Error(err))
+			}
+
+			k.bCh <- b
+			k.bufpool.Put(buf)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (k *kafka) addHostname(buf *bytes.Buffer) []byte {
+	buf.Bytes()[buf.Len()-1] = ','
+	buf.Write(k.jsonTail)
+
+	return buf.Bytes()
+}
+
+func (k *kafka) hostname() {
+	hostname, _ := os.Hostname()
+	k.jsonTail = []byte(fmt.Sprintf("\"Hostname\":\"%s\"}", hostname))
 }
