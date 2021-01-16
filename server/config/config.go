@@ -3,17 +3,25 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	yml "gopkg.in/yaml.v3"
 )
 
 type ctxKey string
 
 type Config struct {
-	Geo    Geo
-	Ingest Ingest
+	Ingress   map[string]Ingress
+	Ingestion map[string]Ingestion
+	Flow      []Flow
+	Geo       Geo
+	Log       *zap.Config
+
+	logger *zap.Logger
 }
 
 type Geo struct {
@@ -21,9 +29,24 @@ type Geo struct {
 	Config map[string]string `yaml:"config"`
 }
 
-type Ingest struct {
+type Ingestion struct {
 	Type   string                 `yaml:"type"`
 	Config map[string]interface{} `yaml:"config"`
+}
+
+type Ingress struct {
+	Type   string                 `yaml:"type"`
+	Config map[string]interface{} `yaml:"config"`
+}
+
+type Flow struct {
+	Ingress       string
+	Ingestion     string
+	Serialization string
+}
+
+func (c *Config) Logger() *zap.Logger {
+	return c.logger
 }
 
 // WithContext returns new context including configuration
@@ -53,7 +76,56 @@ func Load(file string) (*Config, error) {
 		return nil, err
 	}
 
+	c.logger = getLogger(c.Log)
+
+	setDefault(c)
+
 	return c, nil
+}
+
+func setDefault(conf *Config) {
+	// set default logger
+	if conf.logger == nil {
+		conf.logger = getDefaultLogger()
+	}
+}
+
+// getDefaultLogger creates default zap logger.
+func getDefaultLogger() *zap.Logger {
+	var cfg = zap.Config{
+		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		EncoderConfig:    zap.NewProductionEncoderConfig(),
+		Encoding:         "console",
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	cfg.EncoderConfig.EncodeCaller = nil
+	cfg.DisableStacktrace = true
+
+	logger, _ := cfg.Build()
+
+	return logger
+}
+
+func getLogger(zCfg *zap.Config) *zap.Logger {
+	if zCfg == nil {
+		return nil
+	}
+
+	zCfg.Encoding = "console"
+	zCfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	zCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	zCfg.EncoderConfig.EncodeCaller = nil
+	zCfg.DisableStacktrace = true
+
+	logger, err := zCfg.Build()
+	if err != nil {
+		exit(err)
+	}
+
+	return logger
 }
 
 func Transform(cfg map[string]interface{}, d interface{}) error {
@@ -63,4 +135,9 @@ func Transform(cfg map[string]interface{}, d interface{}) error {
 	}
 
 	return json.Unmarshal(b, d)
+}
+
+func exit(err error) {
+	fmt.Println(err)
+	os.Exit(1)
 }

@@ -18,6 +18,7 @@ import (
 )
 
 type kafka struct {
+	producer sarama.AsyncProducer
 	bufpool  *sync.Pool
 	dCh      chan *bytes.Buffer
 	bCh      chan []byte
@@ -27,17 +28,12 @@ type kafka struct {
 // Start starts producing the requested fields to kafka cluster.
 func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
-		cfg    = config.FromContext(ctx)
-		kCfg   = kafkaConfig(cfg.Egress[tp.Egress].Config)
-		sCfg   = saramaConfig(kCfg)
-		logger = cfg.Logger()
+		cfg  = config.FromContext(ctx)
+		kCfg = kafkaConfig(cfg.Egress[tp.Egress].Config)
+		sCfg = saramaConfig(kCfg)
 	)
 
-	if err := sCfg.Validate(); err != nil {
-		return err
-	}
-
-	producer, err := sarama.NewAsyncProducer(kCfg.Brokers, sCfg)
+	err := sCfg.Validate()
 	if err != nil {
 		return err
 	}
@@ -45,6 +41,11 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	k := kafka{
 		bufpool: bufpool,
 		dCh:     ch,
+	}
+
+	k.producer, err = sarama.NewAsyncProducer(kCfg.Brokers, sCfg)
+	if err != nil {
+		return err
 	}
 
 	k.hostname()
@@ -55,44 +56,18 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 		for i := 0; i < kCfg.Workers; i++ {
 			go k.workerSPB(ctx, cfg.Fields[tp.Fields])
 		}
+		k.protobufLoop(ctx, kCfg.Topic)
+
 	case "pb":
 		k.bCh = make(chan []byte, 1000)
 		for i := 0; i < kCfg.Workers; i++ {
 			go k.workerPB(ctx, cfg.Fields[tp.Fields])
 		}
+		k.protobufLoop(ctx, kCfg.Topic)
+
+	case "json":
+		k.jsonLoop(ctx, kCfg.Topic)
 	}
-
-	go func() {
-		for {
-			select {
-			//  protobuf (pb) and struct protobuf (spb) serializations
-			case b := <-k.bCh:
-				select {
-				case producer.Input() <- &sarama.ProducerMessage{
-					Topic: kCfg.Topic,
-					Value: sarama.ByteEncoder(b),
-				}:
-				case err := <-producer.Errors():
-					logger.Error("kafka", zap.Error(err))
-				}
-
-				// json serialization
-			case buf := <-k.dCh:
-				select {
-				case producer.Input() <- &sarama.ProducerMessage{
-					Topic: kCfg.Topic,
-					Value: sarama.ByteEncoder(k.addHostname(buf)),
-				}:
-				case err := <-producer.Errors():
-					logger.Error("kafka", zap.Error(err))
-				}
-
-				k.bufpool.Put(buf)
-
-			case <-ctx.Done():
-			}
-		}
-	}()
 
 	return nil
 }
@@ -133,7 +108,7 @@ func (k *kafka) workerPB(ctx context.Context, fields []config.Field) {
 		case buf := <-k.dCh:
 			m := pb.Fields{}
 			protojson.Unmarshal(buf.Bytes(), &m)
-			m.Hostname = hostname
+			m.Hostname = &hostname
 			b, err := proto.Marshal(&m)
 			if err != nil {
 				logger.Error("kafka", zap.Error(err))
@@ -147,11 +122,64 @@ func (k *kafka) workerPB(ctx context.Context, fields []config.Field) {
 	}
 }
 
-func (k *kafka) addHostname(buf *bytes.Buffer) []byte {
-	buf.Bytes()[buf.Len()-1] = ','
-	buf.Write(k.jsonTail)
+func (k *kafka) jsonLoop(ctx context.Context, topic string) {
+	logger := config.FromContext(ctx).Logger()
 
-	return buf.Bytes()
+	go func() {
+		for {
+			select {
+			case buf := <-k.dCh:
+				select {
+				case k.producer.Input() <- &sarama.ProducerMessage{
+					Topic: topic,
+					Value: sarama.ByteEncoder(k.addHostname(buf)),
+				}:
+				case err := <-k.producer.Errors():
+					logger.Error("kafka", zap.Error(err))
+				}
+
+				k.bufpool.Put(buf)
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+func (k *kafka) protobufLoop(ctx context.Context, topic string) {
+	logger := config.FromContext(ctx).Logger()
+
+	go func() {
+		for {
+			select {
+			//  protobuf (pb) and struct protobuf (spb) serializations
+			case b := <-k.bCh:
+				select {
+				case k.producer.Input() <- &sarama.ProducerMessage{
+					Topic: topic,
+					Value: sarama.ByteEncoder(b),
+				}:
+				case err := <-k.producer.Errors():
+					logger.Error("kafka", zap.Error(err))
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+}
+
+// addHostname adds hostname to encoded json and returns
+// a fresh byte slice.
+func (k *kafka) addHostname(buf *bytes.Buffer) []byte {
+	b := make([]byte, 0, buf.Len()+len(k.jsonTail))
+	b = append(b, buf.Bytes()...)
+	b[len(b)-1] = ','
+	b = append(b, k.jsonTail...)
+
+	return b
 }
 
 func (k *kafka) hostname() {

@@ -3,15 +3,15 @@ package main
 import (
 	"log"
 
-	pb "github.com/mehrdadrad/tcpdog/proto"
+	"github.com/sethvargo/go-signalcontext"
+
 	"github.com/mehrdadrad/tcpdog/server/config"
 	"github.com/mehrdadrad/tcpdog/server/ingest/influxdb"
 	"github.com/mehrdadrad/tcpdog/server/ingress/grpc"
-	"github.com/sethvargo/go-signalcontext"
+	"github.com/mehrdadrad/tcpdog/server/ingress/kafka"
 )
 
 func main() {
-	var ch = make(chan *pb.FieldsPBS, 10000)
 
 	cfg, err := config.Load("../config.yaml")
 	if err != nil {
@@ -23,8 +23,18 @@ func main() {
 
 	ctx = cfg.WithContext(ctx)
 
-	grpc.Start(ctx, ch)
-	influxdb.Start(ctx, ch)
+	for _, f := range cfg.Flow {
+		ch := make(chan interface{}, 1000)
+
+		switch cfg.Ingress[f.Ingress].Type {
+		case "grpc":
+			grpc.Start(ctx, ch)
+		case "kafka":
+			kafka.Start(ctx, f.Ingress, f.Serialization, ch)
+		}
+
+		influxdb.Start(ctx, f.Ingestion, f.Serialization, ch)
+	}
 
 	<-ctx.Done()
 }

@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net"
 
@@ -11,11 +10,18 @@ import (
 )
 
 type Server struct {
-	ch chan *pb.FieldsPBS
+	ch chan interface{}
 }
 
 func (s *Server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
-	return errors.New("does not support")
+	for {
+		fields, err := srv.Recv()
+		if err != nil {
+			return err
+		}
+
+		s.ch <- fields
+	}
 }
 
 func (s *Server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
@@ -29,7 +35,7 @@ func (s *Server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
 	}
 }
 
-func Start(ctx context.Context, ch chan *pb.FieldsPBS) {
+func Start(ctx context.Context, ch chan interface{}) {
 	l, err := net.Listen("tcp", ":8085")
 	if err != nil {
 		log.Fatal(err)
