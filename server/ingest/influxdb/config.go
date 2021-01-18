@@ -18,7 +18,7 @@ type dbConfig struct {
 	GeoField string `yaml:"geoField"`
 }
 
-func influxConfig(cfg map[string]interface{}) *dbConfig {
+func influxDBConfig(cfg map[string]interface{}) *dbConfig {
 	// default configuration
 	conf := &dbConfig{
 		URL:        "http://localhost:8086",

@@ -27,7 +27,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	var g geo.Geoer
 
 	cfg := config.FromContext(ctx)
-	dCfg := influxConfig(cfg.Ingestion[name].Config)
+	dCfg := influxDBConfig(cfg.Ingestion[name].Config)
 
 	client := influxdb2.NewClientWithOptions(dCfg.URL, "", influxdbOpts(dCfg))
 	writeAPI := client.WriteAPI(dCfg.Org, dCfg.Bucket)
