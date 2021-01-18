@@ -1,19 +1,24 @@
 package elasticsearch
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"strings"
+	"reflect"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
+	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/structpb"
 
+	pb "github.com/mehrdadrad/tcpdog/proto"
 	"github.com/mehrdadrad/tcpdog/server/config"
 	"github.com/mehrdadrad/tcpdog/server/geo"
 )
 
 type elastic struct {
-	g             geo.Geoer
+	geo           geo.Geoer
 	cfg           *esConfig
 	serialization string
 }
@@ -24,15 +29,19 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 
 	cfg := config.FromContext(ctx)
 	eCfg := elasticSearchConfig(cfg.Ingestion[name].Config)
+	logger := cfg.Logger()
 
 	client, err := elasticsearch.NewDefaultClient()
 	if err != nil {
-		panic(err)
+		logger.Fatal("elasticsearch", zap.Error(err))
 	}
 
 	indexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
 		Client: client,
 		Index:  "tcpdog",
+		OnError: func(ctx context.Context, err error) {
+			logger.Error("elasticsearch", zap.Error(err))
+		},
 	})
 
 	// if geo is available
@@ -41,7 +50,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		g.Init(cfg.Logger(), cfg.Geo.Config)
 	}
 
-	e := elastic{g: g, cfg: eCfg, serialization: ser}
+	e := elastic{geo: g, cfg: eCfg, serialization: ser}
 
 	iCh := make(chan *esutil.BulkIndexerItem, 1000)
 	for c := 0; c < eCfg.Workers; c++ {
@@ -54,7 +63,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 			case item := <-iCh:
 				err = indexer.Add(ctx, *item)
 				if err != nil {
-					panic(err)
+					logger.Error("elasticsearch", zap.Error(err))
 				}
 			case <-ctx.Done():
 				return
@@ -86,6 +95,10 @@ func (e *elastic) getItemMaker(ser string) func(fi interface{}) *esutil.BulkInde
 	switch ser {
 	case "json":
 		return e.itemJSON
+	case "spb":
+		return e.itemSPB
+	case "pb":
+		return e.itemPB
 	}
 
 	return nil
@@ -94,12 +107,10 @@ func (e *elastic) getItemMaker(ser string) func(fi interface{}) *esutil.BulkInde
 func (e *elastic) itemJSON(fi interface{}) *esutil.BulkIndexerItem {
 	f := fi.(map[string]interface{})
 
-	for key, field := range f {
-		if value, ok := field.(string); ok {
-			if e.g != nil && (key == e.cfg.GeoField) {
-				for k1, v1 := range e.g.Get(value) {
-					f[k1] = v1
-				}
+	if e.geo != nil {
+		if gv, ok := f[e.cfg.GeoField]; ok {
+			for k, v := range e.geo.Get(gv.(string)) {
+				f[k] = v
 			}
 		}
 	}
@@ -111,6 +122,61 @@ func (e *elastic) itemJSON(fi interface{}) *esutil.BulkIndexerItem {
 
 	return &esutil.BulkIndexerItem{
 		Action: "index",
-		Body:   strings.NewReader(string(b)),
+		Body:   bytes.NewReader(b),
+	}
+}
+
+func (e *elastic) itemSPB(fi interface{}) *esutil.BulkIndexerItem {
+	f := fi.(*pb.FieldsPBS)
+
+	if e.geo != nil {
+		if gv, ok := f.Fields.Fields[e.cfg.GeoField]; ok {
+			for k, v := range e.geo.Get(gv.GetStringValue()) {
+				f.Fields.Fields[k] = structpb.NewStringValue(v)
+			}
+		}
+	}
+
+	b, err := protojson.Marshal(f.Fields)
+	if err != nil {
+		return nil
+	}
+
+	return &esutil.BulkIndexerItem{
+		Action: "index",
+		Body:   bytes.NewReader(b),
+	}
+}
+
+func (e *elastic) itemPB(fi interface{}) *esutil.BulkIndexerItem {
+	var geoKV map[string]string
+
+	f := fi.(*pb.Fields)
+
+	value := reflect.ValueOf(f).Elem()
+
+	if e.geo != nil {
+		gv := value.FieldByName(e.cfg.GeoField)
+		if gv.IsValid() {
+			geoKV = e.geo.Get(gv.Elem().String())
+		}
+	}
+
+	for k, v := range geoKV {
+		v := v
+		fv := value.FieldByName(k)
+		if fv.IsValid() {
+			fv.Set(reflect.ValueOf(&v))
+		}
+	}
+
+	b, err := protojson.Marshal(f)
+	if err != nil {
+		return nil
+	}
+
+	return &esutil.BulkIndexerItem{
+		Action: "index",
+		Body:   bytes.NewReader(b),
 	}
 }
