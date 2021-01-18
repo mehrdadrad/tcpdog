@@ -6,7 +6,8 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 
 	"github.com/mehrdadrad/tcpdog/server/config"
-	"github.com/mehrdadrad/tcpdog/server/ingest/influxdb"
+	"github.com/mehrdadrad/tcpdog/server/ingestion/elasticsearch"
+	"github.com/mehrdadrad/tcpdog/server/ingestion/influxdb"
 	"github.com/mehrdadrad/tcpdog/server/ingress/grpc"
 	"github.com/mehrdadrad/tcpdog/server/ingress/kafka"
 )
@@ -23,17 +24,22 @@ func main() {
 
 	ctx = cfg.WithContext(ctx)
 
-	for _, f := range cfg.Flow {
+	for _, flow := range cfg.Flow {
 		ch := make(chan interface{}, 1000)
 
-		switch cfg.Ingress[f.Ingress].Type {
+		switch cfg.Ingress[flow.Ingress].Type {
 		case "grpc":
 			grpc.Start(ctx, ch)
 		case "kafka":
-			kafka.Start(ctx, f.Ingress, f.Serialization, ch)
+			kafka.Start(ctx, flow.Ingress, flow.Serialization, ch)
 		}
 
-		influxdb.Start(ctx, f.Ingestion, f.Serialization, ch)
+		switch cfg.Ingestion[flow.Ingestion].Type {
+		case "influxdb":
+			influxdb.Start(ctx, flow.Ingestion, flow.Serialization, ch)
+		case "elasticsearch":
+			elasticsearch.Start(ctx, flow.Ingestion, flow.Serialization, ch)
+		}
 	}
 
 	<-ctx.Done()
