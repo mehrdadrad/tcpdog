@@ -2,17 +2,22 @@ package grpc
 
 import (
 	"context"
-	"log"
 	"net"
 
-	pb "github.com/mehrdadrad/tcpdog/proto"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
+
+	pb "github.com/mehrdadrad/tcpdog/proto"
+	"github.com/mehrdadrad/tcpdog/server/config"
 )
 
+// Server represents gRPC server
 type Server struct {
-	ch chan interface{}
+	ch     chan interface{}
+	logger *zap.Logger
 }
 
+// Tracepoint receives protobuf messages
 func (s *Server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
 	for {
 		fields, err := srv.Recv()
@@ -20,10 +25,15 @@ func (s *Server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
 			return err
 		}
 
-		s.ch <- fields
+		select {
+		case s.ch <- fields:
+		default:
+			s.logger.Error("grpc", zap.String("msg", "data has been dropped"))
+		}
 	}
 }
 
+// TracepointPBS receives struct protobuf messages
 func (s *Server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
 	for {
 		fields, err := srv.Recv()
@@ -31,23 +41,52 @@ func (s *Server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
 			return err
 		}
 
-		s.ch <- fields
+		select {
+		case s.ch <- fields:
+		default:
+			s.logger.Error("grpc", zap.String("msg", "data has been dropped"))
+		}
 	}
 }
 
-func Start(ctx context.Context, ch chan interface{}) {
-	l, err := net.Listen("tcp", ":8085")
+// Start starts gRPC server
+func Start(ctx context.Context, name string, ch chan interface{}) {
+	gCfg := grpcConfig(config.FromContext(ctx).Ingress[name].Config)
+	logger := config.FromContext(ctx).Logger()
+
+	l, err := net.Listen("tcp", gCfg.Addr)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("grpc", zap.Error(err))
 	}
 	srv := Server{
-		ch: ch,
+		ch:     ch,
+		logger: logger,
 	}
 
-	gServer := grpc.NewServer()
+	opts, err := getServerOpts(gCfg)
+	if err != nil {
+		logger.Fatal("grpc", zap.Error(err))
+	}
+
+	gServer := grpc.NewServer(opts...)
 	pb.RegisterTCPDogServer(gServer, &srv)
 
 	go func() {
-		log.Fatal(gServer.Serve(l))
+		err := gServer.Serve(l)
+		logger.Fatal("grpc", zap.Error(err))
 	}()
+}
+
+func getServerOpts(gCfg *Config) ([]grpc.ServerOption, error) {
+	var opts []grpc.ServerOption
+
+	if gCfg.TLSConfig != nil && gCfg.TLSConfig.Enable {
+		creds, err := config.GetCreds(gCfg.TLSConfig)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, grpc.Creds(creds))
+	}
+
+	return opts, nil
 }
