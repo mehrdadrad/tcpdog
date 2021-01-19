@@ -14,31 +14,39 @@ message FieldsPBS {
 }
 
 message Fields {
-    int32 TCPHeaderLen = 1;
-    int32 SRTT = 2;
-    int32 MDev = 3; 
-    int32 TotalRetrans = 4;
-    int32 AdvMSS = 5;
-    string SAddr = 6;
-    string DAddr = 7;
-    int32 DPort = 8;
-    int32 LPort = 9;
-    int64 BytesReceived = 10;
-    int64 BytesSent = 11;
-    int64 BytesAcked = 12;
-    int32 NumSAcks = 13;
-    int32 UserMSS = 14;
-    int32 RTT = 15;
-    int32 MSSClamp = 16;
-    string Task = 17;
-    int32 PID = 18;
-    int32 SegsIn = 19;
-    int32 SegsOut = 20;
-    int32 DsackDups = 21;
-    int32 RateDelivered = 22;
-    int32 RateInterval = 23;
-    string Hostname = 24;
-    int64 Timestamp = 25;
+    optional int32 TCPHeaderLen = 1;
+    optional int32 SRTT = 2;
+    optional int32 MDev = 3; 
+    optional int32 TotalRetrans = 4;
+    optional int32 AdvMSS = 5;
+    optional string SAddr = 6;
+    optional string DAddr = 7;
+    optional int32 DPort = 8;
+    optional int32 LPort = 9;
+    optional int64 BytesReceived = 10;
+    optional int64 BytesSent = 11;
+    optional int64 BytesAcked = 12;
+    optional int32 NumSAcks = 13;
+    optional int32 UserMSS = 14;
+    optional int32 RTT = 15;
+    optional int32 MSSClamp = 16;
+    optional string Task = 17;
+    optional int32 PID = 18;
+    optional int32 SegsIn = 19;
+    optional int32 SegsOut = 20;
+    optional int32 DsackDups = 21;
+    optional int32 RateDelivered = 22;
+    optional int32 RateInterval = 23;
+    optional string GeoLocation = 24;
+    optional string CCode = 25;
+    optional string CSCode = 26;
+    optional string Country = 27;
+    optional string City = 28;
+    optional string Region = 29;
+    optional string ASN = 30;
+    optional string ASNOrg = 31;
+    optional string Hostname = 32;
+    optional int64 Timestamp = 33;
 }
 
 message Response {

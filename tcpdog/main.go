@@ -22,7 +22,7 @@ func main() {
 	}
 
 	cfg := config.Get(r)
-	err = validation(cfg)
+	err = validate(cfg)
 	if err != nil {
 		exit(err)
 	}

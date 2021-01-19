@@ -29,7 +29,7 @@ func main() {
 
 		switch cfg.Ingress[flow.Ingress].Type {
 		case "grpc":
-			grpc.Start(ctx, ch)
+			grpc.Start(ctx, flow.Ingress, ch)
 		case "kafka":
 			kafka.Start(ctx, flow.Ingress, flow.Serialization, ch)
 		}

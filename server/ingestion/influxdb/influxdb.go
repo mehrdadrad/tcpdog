@@ -17,7 +17,7 @@ import (
 const maxChanSize = 1000
 
 type influxdb struct {
-	g             geo.Geoer
+	geo           geo.Geoer
 	cfg           *dbConfig
 	serialization string
 }
@@ -38,7 +38,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		g.Init(cfg.Logger(), cfg.Geo.Config)
 	}
 
-	i := influxdb{g: g, cfg: dCfg, serialization: ser}
+	i := influxdb{geo: g, cfg: dCfg, serialization: ser}
 
 	pCh := make(chan *write.Point, maxChanSize)
 
@@ -72,7 +72,6 @@ func (i *influxdb) pWorker(ctx context.Context, ch chan interface{}, pCh chan *w
 			if p != nil {
 				pCh <- p
 			}
-			//_ = p
 		case <-ctx.Done():
 			return
 		}
@@ -104,8 +103,8 @@ func (i *influxdb) pointPBS(fi interface{}) *write.Point {
 
 	for key, field := range f.Fields.Fields {
 		if value, ok := field.GetKind().(*structpb.Value_StringValue); ok {
-			if i.g != nil && (key == i.cfg.GeoField) {
-				for k1, v1 := range i.g.Get(value.StringValue) {
+			if i.geo != nil && (key == i.cfg.GeoField) {
+				for k1, v1 := range i.geo.Get(value.StringValue) {
 					tags[k1] = v1
 				}
 				continue
@@ -139,8 +138,8 @@ func (i *influxdb) pointPB(fi interface{}) *write.Point {
 			if v.Field(n).Pointer() != 0 {
 				switch v.Field(n).Addr().Elem().Elem().Kind() {
 				case reflect.String:
-					if i.g != nil && (v.Type().Field(n).Name == i.cfg.GeoField) {
-						for k1, v1 := range i.g.Get(v.Field(n).Elem().String()) {
+					if i.geo != nil && (v.Type().Field(n).Name == i.cfg.GeoField) {
+						for k1, v1 := range i.geo.Get(v.Field(n).Elem().String()) {
 							tags[k1] = v1
 						}
 						continue
@@ -173,8 +172,8 @@ func (i *influxdb) pointJSON(fi interface{}) *write.Point {
 
 	for key, field := range f {
 		if value, ok := field.(string); ok {
-			if i.g != nil && (key == i.cfg.GeoField) {
-				for k1, v1 := range i.g.Get(value) {
+			if i.geo != nil && (key == i.cfg.GeoField) {
+				for k1, v1 := range i.geo.Get(value) {
 					tags[k1] = v1
 				}
 				continue

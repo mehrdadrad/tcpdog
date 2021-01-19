@@ -101,7 +101,7 @@ func protobuf(ctx context.Context, stream pb.TCPDog_TracepointClient, bufpool *s
 		case buf = <-ch:
 			m := pb.Fields{}
 			protojson.Unmarshal(buf.Bytes(), &m)
-			m.Hostname = hostname
+			m.Hostname = &hostname
 			if err := stream.Send(&m); err != nil {
 				return err
 			}

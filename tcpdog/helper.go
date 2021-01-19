@@ -9,10 +9,10 @@ import (
 	"github.com/mehrdadrad/tcpdog/ebpf"
 )
 
-func validation(cfg *config.Config) error {
+func validate(cfg *config.Config) error {
 	for i, tp := range cfg.Tracepoints {
 		// fields validation
-		err := validationFields(cfg, tp.Fields)
+		err := validateFields(cfg, tp.Fields)
 		if err != nil {
 			return err
 		}
@@ -31,7 +31,7 @@ func validation(cfg *config.Config) error {
 		}
 
 		// egress
-		err = validationEgress(cfg)
+		err = validateEgress(cfg)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func validation(cfg *config.Config) error {
 	return nil
 }
 
-func validationFields(cfg *config.Config, name string) error {
+func validateFields(cfg *config.Config, name string) error {
 	if _, ok := cfg.Fields[name]; !ok {
 		return fmt.Errorf("%s not exist", name)
 	}
@@ -60,7 +60,7 @@ func validationFields(cfg *config.Config, name string) error {
 	return nil
 }
 
-func validationEgress(cfg *config.Config) error {
+func validateEgress(cfg *config.Config) error {
 	for _, tracepoint := range cfg.Tracepoints {
 		if _, ok := cfg.Egress[tracepoint.Egress]; !ok {
 			return fmt.Errorf("egress not found: %s", tracepoint.Egress)
