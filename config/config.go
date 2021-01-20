@@ -2,6 +2,8 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +11,7 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/grpc/credentials"
 	yml "gopkg.in/yaml.v3"
 )
 
@@ -22,6 +25,15 @@ type Config struct {
 	Log         *zap.Config
 
 	logger *zap.Logger
+}
+
+// TLSConfig represents TLS configuration
+type TLSConfig struct {
+	Enable   bool
+	Insecure bool
+	CertFile string `yaml:"certFile"`
+	KeyFile  string `yaml:"keyFile"`
+	CAFile   string `yaml:"caFile"`
 }
 
 // EgressConfig represents egress configuration
@@ -244,6 +256,50 @@ func Transform(cfg interface{}, d interface{}) error {
 	}
 
 	return json.Unmarshal(b, d)
+}
+
+func GetTLS(cfg *TLSConfig) (*tls.Config, error) {
+	var (
+		tlsConfig  = &tls.Config{}
+		caCertPool *x509.CertPool
+	)
+
+	if cfg.CertFile != "" {
+		if cfg.KeyFile == "" {
+			cfg.KeyFile = cfg.CertFile
+		}
+
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if cfg.CAFile != "" {
+		caCert, err := ioutil.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, err
+		}
+
+		caCertPool = x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		tlsConfig.RootCAs = caCertPool
+	}
+
+	tlsConfig.InsecureSkipVerify = cfg.Insecure
+
+	return tlsConfig, nil
+}
+
+func GetCreds(cfg *TLSConfig) (credentials.TransportCredentials, error) {
+	tlsConfig, err := GetTLS(cfg)
+	if err != nil {
+		return nil, nil
+	}
+	return credentials.NewTLS(tlsConfig), nil
 }
 
 func exit(err error) {

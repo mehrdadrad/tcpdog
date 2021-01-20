@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"time"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esutil"
@@ -28,21 +29,31 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	var g geo.Geoer
 
 	cfg := config.FromContext(ctx)
-	eCfg := elasticSearchConfig(cfg.Ingestion[name].Config)
 	logger := cfg.Logger()
 
-	client, err := elasticsearch.NewDefaultClient()
+	eCfg, err := elasticSearchConfig(cfg.Ingestion[name].Config)
 	if err != nil {
-		logger.Fatal("elasticsearch", zap.Error(err))
+		logger.Fatal("es.config", zap.Error(err))
+	}
+
+	client, err := elasticsearch.NewClient(eCfg.clientConfig)
+	if err != nil {
+		logger.Fatal("es.client", zap.Error(err))
 	}
 
 	indexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
-		Client: client,
-		Index:  "tcpdog",
+		Client:        client,
+		Index:         eCfg.Index,
+		FlushBytes:    eCfg.FlushBytes,
+		FlushInterval: time.Duration(eCfg.FlushInterval) * time.Second,
+
 		OnError: func(ctx context.Context, err error) {
-			logger.Error("elasticsearch", zap.Error(err))
+			logger.Error("es.bulkindexer", zap.Error(err))
 		},
 	})
+	if err != nil {
+		logger.Error("es.indexer", zap.Error(err))
+	}
 
 	// if geo is available
 	if v, ok := geo.Reg[cfg.Geo.Type]; ok {
@@ -53,6 +64,8 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	e := elastic{geo: g, cfg: eCfg, serialization: ser}
 
 	iCh := make(chan *esutil.BulkIndexerItem, 1000)
+
+	// marshaler workers (encode data)
 	for c := 0; c < eCfg.Workers; c++ {
 		go e.iWorker(ctx, ch, iCh)
 	}
@@ -63,9 +76,10 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 			case item := <-iCh:
 				err = indexer.Add(ctx, *item)
 				if err != nil {
-					logger.Error("elasticsearch", zap.Error(err))
+					logger.Error("es.add", zap.Error(err))
 				}
 			case <-ctx.Done():
+				indexer.Close(ctx)
 				return
 			}
 		}

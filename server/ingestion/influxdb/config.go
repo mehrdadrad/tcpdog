@@ -3,19 +3,22 @@ package influxdb
 import (
 	"log"
 
-	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/server/config"
 )
 
 type dbConfig struct {
-	URL        string `yaml:"url"`
+	URL        string
 	Org        string
 	Bucket     string
+	Token      string
 	Timeout    uint
 	MaxRetries uint
 	BatchSize  uint
 	Workers    uint
 
-	GeoField string `yaml:"geoField"`
+	GeoField string // field supposed to resolve to Geo
+
+	TLSConfig config.TLSConfig // TLS configuration
 }
 
 func influxDBConfig(cfg map[string]interface{}) *dbConfig {

@@ -7,6 +7,7 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "github.com/mehrdadrad/tcpdog/proto"
@@ -27,10 +28,17 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	var g geo.Geoer
 
 	cfg := config.FromContext(ctx)
-	dCfg := influxDBConfig(cfg.Ingestion[name].Config)
+	iCfg := influxDBConfig(cfg.Ingestion[name].Config)
 
-	client := influxdb2.NewClientWithOptions(dCfg.URL, "", influxdbOpts(dCfg))
-	writeAPI := client.WriteAPI(dCfg.Org, dCfg.Bucket)
+	logger := cfg.Logger()
+
+	opts, err := influxdbOpts(iCfg)
+	if err != nil {
+		logger.Fatal("influxdb", zap.Error(err))
+	}
+
+	client := influxdb2.NewClientWithOptions(iCfg.URL, iCfg.Token, opts)
+	writeAPI := client.WriteAPI(iCfg.Org, iCfg.Bucket)
 
 	// if geo is available
 	if v, ok := geo.Reg[cfg.Geo.Type]; ok {
@@ -38,11 +46,11 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		g.Init(cfg.Logger(), cfg.Geo.Config)
 	}
 
-	i := influxdb{geo: g, cfg: dCfg, serialization: ser}
+	i := influxdb{geo: g, cfg: iCfg, serialization: ser}
 
 	pCh := make(chan *write.Point, maxChanSize)
 
-	for c := uint(0); c < dCfg.Workers; c++ {
+	for c := uint(0); c < iCfg.Workers; c++ {
 		go i.pWorker(ctx, ch, pCh)
 	}
 
@@ -190,11 +198,20 @@ func (i *influxdb) pointJSON(fi interface{}) *write.Point {
 }
 
 // influxdbOpts returns influxdb options
-func influxdbOpts(cfg *dbConfig) *influxdb2.Options {
+func influxdbOpts(cfg *dbConfig) (*influxdb2.Options, error) {
 	opts := influxdb2.DefaultOptions()
 	opts.SetMaxRetries(cfg.MaxRetries)
 	opts.SetHTTPRequestTimeout(cfg.Timeout)
 	opts.SetBatchSize(cfg.BatchSize)
 
-	return opts
+	// TLS
+	if cfg.TLSConfig.Enable {
+		tlsConfig, err := config.GetTLS(&cfg.TLSConfig)
+		if err != nil {
+			return nil, err
+		}
+		opts = opts.SetTLSConfig(tlsConfig)
+	}
+
+	return opts, nil
 }
