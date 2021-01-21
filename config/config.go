@@ -137,33 +137,32 @@ func setDefault(conf *Config) {
 }
 
 // Get returns the configuration based on the file or cli
-func Get(cli *CLIRequest) *Config {
+func Get(cli *CLIRequest) (*Config, error) {
 	var (
 		config *Config
 		err    error
 	)
 
 	defer func() {
-		setDefault(config)
+		if config != nil {
+			setDefault(config)
+		}
 	}()
 
 	if cli.Config != "" {
 		config, err = load(cli.Config)
 		if err != nil {
-			exit(err)
+			return nil, err
 		}
 
 		config.logger = getLogger(config.Log)
 
-		return config
+		return config, nil
 	}
 
 	config, err = cliToConfig(cli)
-	if err != nil {
-		exit(err)
-	}
 
-	return config
+	return config, err
 }
 
 func cliToConfig(cli *CLIRequest) (*Config, error) {
