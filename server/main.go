@@ -1,10 +1,12 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/sethvargo/go-signalcontext"
 
+	"github.com/mehrdadrad/tcpdog/server/cli"
 	"github.com/mehrdadrad/tcpdog/server/config"
 	"github.com/mehrdadrad/tcpdog/server/ingestion/elasticsearch"
 	"github.com/mehrdadrad/tcpdog/server/ingestion/influxdb"
@@ -13,10 +15,14 @@ import (
 )
 
 func main() {
-
-	cfg, err := config.Load("../config.yaml")
+	r, err := cli.Get(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		exit(err)
+	}
+
+	cfg, err := config.Get(r)
+	if err != nil {
+		exit(err)
 	}
 
 	ctx, cancel := signalcontext.OnInterrupt()
@@ -43,4 +49,9 @@ func main() {
 	}
 
 	<-ctx.Done()
+}
+
+func exit(err error) {
+	fmt.Println(err)
+	os.Exit(1)
 }

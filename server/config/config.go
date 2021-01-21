@@ -23,7 +23,7 @@ type Config struct {
 	Ingress   map[string]Ingress
 	Ingestion map[string]Ingestion
 	Flow      []Flow
-	Geo       *Geo
+	Geo       Geo
 	Log       *zap.Config
 
 	logger *zap.Logger
@@ -63,6 +63,10 @@ type TLSConfig struct {
 	CAFile   string `yaml:"caFile"`
 }
 
+type CLIRequest struct {
+	Config string
+}
+
 // Logger returns logger
 func (c *Config) Logger() *zap.Logger {
 	return c.logger
@@ -78,8 +82,8 @@ func FromContext(ctx context.Context) *Config {
 	return ctx.Value(ctxKey("cfg")).(*Config)
 }
 
-// Load reads yaml configuration
-func Load(file string) (*Config, error) {
+// load reads yaml configuration
+func load(file string) (*Config, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -97,9 +101,33 @@ func Load(file string) (*Config, error) {
 
 	c.logger = getLogger(c.Log)
 
-	setDefault(c)
-
 	return c, nil
+}
+
+func Get(cli *CLIRequest) (*Config, error) {
+	var (
+		config *Config
+		err    error
+	)
+
+	defer func() {
+		if config != nil {
+			setDefault(config)
+		}
+	}()
+
+	if len(cli.Config) < 1 {
+		cli.Config = "/etc/tcpdog/server.yaml"
+	}
+
+	config, err = load(cli.Config)
+	if err != nil {
+		return nil, err
+	}
+
+	config.logger = getLogger(config.Log)
+
+	return config, nil
 }
 
 func setDefault(conf *Config) {
@@ -109,7 +137,7 @@ func setDefault(conf *Config) {
 	}
 
 	// geo
-	setGeoDefault(conf.Geo)
+	setGeoDefault(&conf.Geo)
 }
 
 // getDefaultLogger creates default zap logger.
