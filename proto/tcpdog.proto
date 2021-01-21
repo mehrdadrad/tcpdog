@@ -6,10 +6,10 @@ import "google/protobuf/struct.proto";
 
 service TCPDog {
     rpc Tracepoint(stream Fields) returns (Response) {}
-    rpc TracepointPBS(stream FieldsPBS) returns (Response) {}
+    rpc TracepointSPB(stream FieldsSPB) returns (Response) {}
 }
 
-message FieldsPBS {
+message FieldsSPB {
    google.protobuf.Struct fields = 1;
 }
 

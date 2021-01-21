@@ -119,16 +119,14 @@ func (b *Backoff) Next() {
 		return
 	}
 
-	if time.Since(b.last).Seconds() > float64(30*60) {
+	if time.Since(b.last).Minutes() > 30 {
 		b.reset()
 		return
 	}
 
-	if time.Since(b.last).Seconds() < float64(60) {
-		if b.duration < time.Duration(60*time.Second) {
-			b.duration += b.duration * 10 / 100
-			b.last = time.Now()
-		}
+	if b.duration.Minutes() < 2 {
+		b.duration += b.duration * 15 / 100
+		b.last = time.Now()
 	}
 
 	b.cfg.Logger().Info("backoff", zap.String("delay", fmt.Sprintf("%.2fs", b.duration.Seconds())))

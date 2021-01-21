@@ -80,7 +80,7 @@ func (k *kafka) workerSPB(ctx context.Context, fields []config.Field) {
 	for {
 		select {
 		case buf := <-k.dCh:
-			a := &pb.FieldsPBS{
+			a := &pb.FieldsSPB{
 				Fields: spb.Unmarshal(buf),
 			}
 

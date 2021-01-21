@@ -30,7 +30,7 @@ const (
 // of the legacy proto package is being used.
 const _ = proto.ProtoPackageIsVersion4
 
-type FieldsPBS struct {
+type FieldsSPB struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -38,8 +38,8 @@ type FieldsPBS struct {
 	Fields *_struct.Struct `protobuf:"bytes,1,opt,name=fields,proto3" json:"fields,omitempty"`
 }
 
-func (x *FieldsPBS) Reset() {
-	*x = FieldsPBS{}
+func (x *FieldsSPB) Reset() {
+	*x = FieldsSPB{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_tcpdog_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -47,13 +47,13 @@ func (x *FieldsPBS) Reset() {
 	}
 }
 
-func (x *FieldsPBS) String() string {
+func (x *FieldsSPB) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FieldsPBS) ProtoMessage() {}
+func (*FieldsSPB) ProtoMessage() {}
 
-func (x *FieldsPBS) ProtoReflect() protoreflect.Message {
+func (x *FieldsSPB) ProtoReflect() protoreflect.Message {
 	mi := &file_tcpdog_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -65,12 +65,12 @@ func (x *FieldsPBS) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FieldsPBS.ProtoReflect.Descriptor instead.
-func (*FieldsPBS) Descriptor() ([]byte, []int) {
+// Deprecated: Use FieldsSPB.ProtoReflect.Descriptor instead.
+func (*FieldsSPB) Descriptor() ([]byte, []int) {
 	return file_tcpdog_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *FieldsPBS) GetFields() *_struct.Struct {
+func (x *FieldsSPB) GetFields() *_struct.Struct {
 	if x != nil {
 		return x.Fields
 	}
@@ -433,8 +433,8 @@ var file_tcpdog_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x06,
 	0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x1a, 0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x73, 0x74, 0x72, 0x75, 0x63, 0x74, 0x2e, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3c, 0x0a, 0x09, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x50, 0x42,
-	0x53, 0x12, 0x2f, 0x0a, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x72, 0x6f, 0x74, 0x6f, 0x22, 0x3c, 0x0a, 0x09, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x53, 0x50,
+	0x42, 0x12, 0x2f, 0x0a, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x0b, 0x32, 0x17, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x62, 0x75, 0x66, 0x2e, 0x53, 0x74, 0x72, 0x75, 0x63, 0x74, 0x52, 0x06, 0x66, 0x69, 0x65, 0x6c,
 	0x64, 0x73, 0x22, 0x9f, 0x0b, 0x0a, 0x06, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x12, 0x27, 0x0a,
@@ -534,8 +534,8 @@ var file_tcpdog_proto_rawDesc = []byte{
 	0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x73, 0x1a, 0x10, 0x2e, 0x74,
 	0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
 	0x28, 0x01, 0x12, 0x38, 0x0a, 0x0d, 0x54, 0x72, 0x61, 0x63, 0x65, 0x70, 0x6f, 0x69, 0x6e, 0x74,
-	0x50, 0x42, 0x53, 0x12, 0x11, 0x2e, 0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e, 0x46, 0x69, 0x65,
-	0x6c, 0x64, 0x73, 0x50, 0x42, 0x53, 0x1a, 0x10, 0x2e, 0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e,
+	0x53, 0x50, 0x42, 0x12, 0x11, 0x2e, 0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e, 0x46, 0x69, 0x65,
+	0x6c, 0x64, 0x73, 0x53, 0x50, 0x42, 0x1a, 0x10, 0x2e, 0x74, 0x63, 0x70, 0x64, 0x6f, 0x67, 0x2e,
 	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x28, 0x01, 0x62, 0x06, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x33,
 }
@@ -554,17 +554,17 @@ func file_tcpdog_proto_rawDescGZIP() []byte {
 
 var file_tcpdog_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_tcpdog_proto_goTypes = []interface{}{
-	(*FieldsPBS)(nil),      // 0: tcpdog.FieldsPBS
+	(*FieldsSPB)(nil),      // 0: tcpdog.FieldsSPB
 	(*Fields)(nil),         // 1: tcpdog.Fields
 	(*Response)(nil),       // 2: tcpdog.Response
 	(*_struct.Struct)(nil), // 3: google.protobuf.Struct
 }
 var file_tcpdog_proto_depIdxs = []int32{
-	3, // 0: tcpdog.FieldsPBS.fields:type_name -> google.protobuf.Struct
+	3, // 0: tcpdog.FieldsSPB.fields:type_name -> google.protobuf.Struct
 	1, // 1: tcpdog.TCPDog.Tracepoint:input_type -> tcpdog.Fields
-	0, // 2: tcpdog.TCPDog.TracepointPBS:input_type -> tcpdog.FieldsPBS
+	0, // 2: tcpdog.TCPDog.TracepointSPB:input_type -> tcpdog.FieldsSPB
 	2, // 3: tcpdog.TCPDog.Tracepoint:output_type -> tcpdog.Response
-	2, // 4: tcpdog.TCPDog.TracepointPBS:output_type -> tcpdog.Response
+	2, // 4: tcpdog.TCPDog.TracepointSPB:output_type -> tcpdog.Response
 	3, // [3:5] is the sub-list for method output_type
 	1, // [1:3] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -579,7 +579,7 @@ func file_tcpdog_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_tcpdog_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*FieldsPBS); i {
+			switch v := v.(*FieldsSPB); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -649,7 +649,7 @@ const _ = grpc.SupportPackageIsVersion6
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type TCPDogClient interface {
 	Tracepoint(ctx context.Context, opts ...grpc.CallOption) (TCPDog_TracepointClient, error)
-	TracepointPBS(ctx context.Context, opts ...grpc.CallOption) (TCPDog_TracepointPBSClient, error)
+	TracepointSPB(ctx context.Context, opts ...grpc.CallOption) (TCPDog_TracepointSPBClient, error)
 }
 
 type tCPDogClient struct {
@@ -694,30 +694,30 @@ func (x *tCPDogTracepointClient) CloseAndRecv() (*Response, error) {
 	return m, nil
 }
 
-func (c *tCPDogClient) TracepointPBS(ctx context.Context, opts ...grpc.CallOption) (TCPDog_TracepointPBSClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_TCPDog_serviceDesc.Streams[1], "/tcpdog.TCPDog/TracepointPBS", opts...)
+func (c *tCPDogClient) TracepointSPB(ctx context.Context, opts ...grpc.CallOption) (TCPDog_TracepointSPBClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_TCPDog_serviceDesc.Streams[1], "/tcpdog.TCPDog/TracepointSPB", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &tCPDogTracepointPBSClient{stream}
+	x := &tCPDogTracepointSPBClient{stream}
 	return x, nil
 }
 
-type TCPDog_TracepointPBSClient interface {
-	Send(*FieldsPBS) error
+type TCPDog_TracepointSPBClient interface {
+	Send(*FieldsSPB) error
 	CloseAndRecv() (*Response, error)
 	grpc.ClientStream
 }
 
-type tCPDogTracepointPBSClient struct {
+type tCPDogTracepointSPBClient struct {
 	grpc.ClientStream
 }
 
-func (x *tCPDogTracepointPBSClient) Send(m *FieldsPBS) error {
+func (x *tCPDogTracepointSPBClient) Send(m *FieldsSPB) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *tCPDogTracepointPBSClient) CloseAndRecv() (*Response, error) {
+func (x *tCPDogTracepointSPBClient) CloseAndRecv() (*Response, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -731,7 +731,7 @@ func (x *tCPDogTracepointPBSClient) CloseAndRecv() (*Response, error) {
 // TCPDogServer is the server API for TCPDog service.
 type TCPDogServer interface {
 	Tracepoint(TCPDog_TracepointServer) error
-	TracepointPBS(TCPDog_TracepointPBSServer) error
+	TracepointSPB(TCPDog_TracepointSPBServer) error
 }
 
 // UnimplementedTCPDogServer can be embedded to have forward compatible implementations.
@@ -741,8 +741,8 @@ type UnimplementedTCPDogServer struct {
 func (*UnimplementedTCPDogServer) Tracepoint(TCPDog_TracepointServer) error {
 	return status.Errorf(codes.Unimplemented, "method Tracepoint not implemented")
 }
-func (*UnimplementedTCPDogServer) TracepointPBS(TCPDog_TracepointPBSServer) error {
-	return status.Errorf(codes.Unimplemented, "method TracepointPBS not implemented")
+func (*UnimplementedTCPDogServer) TracepointSPB(TCPDog_TracepointSPBServer) error {
+	return status.Errorf(codes.Unimplemented, "method TracepointSPB not implemented")
 }
 
 func RegisterTCPDogServer(s *grpc.Server, srv TCPDogServer) {
@@ -775,26 +775,26 @@ func (x *tCPDogTracepointServer) Recv() (*Fields, error) {
 	return m, nil
 }
 
-func _TCPDog_TracepointPBS_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(TCPDogServer).TracepointPBS(&tCPDogTracepointPBSServer{stream})
+func _TCPDog_TracepointSPB_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(TCPDogServer).TracepointSPB(&tCPDogTracepointSPBServer{stream})
 }
 
-type TCPDog_TracepointPBSServer interface {
+type TCPDog_TracepointSPBServer interface {
 	SendAndClose(*Response) error
-	Recv() (*FieldsPBS, error)
+	Recv() (*FieldsSPB, error)
 	grpc.ServerStream
 }
 
-type tCPDogTracepointPBSServer struct {
+type tCPDogTracepointSPBServer struct {
 	grpc.ServerStream
 }
 
-func (x *tCPDogTracepointPBSServer) SendAndClose(m *Response) error {
+func (x *tCPDogTracepointSPBServer) SendAndClose(m *Response) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *tCPDogTracepointPBSServer) Recv() (*FieldsPBS, error) {
-	m := new(FieldsPBS)
+func (x *tCPDogTracepointSPBServer) Recv() (*FieldsSPB, error) {
+	m := new(FieldsSPB)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -812,8 +812,8 @@ var _TCPDog_serviceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "TracepointPBS",
-			Handler:       _TCPDog_TracepointPBS_Handler,
+			StreamName:    "TracepointSPB",
+			Handler:       _TCPDog_TracepointSPB_Handler,
 			ClientStreams: true,
 		},
 	},

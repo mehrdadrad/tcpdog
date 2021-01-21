@@ -116,7 +116,7 @@ func getUnmarshal(ser string) func(b []byte) (interface{}, error) {
 		}
 	case "spb":
 		return func(b []byte) (interface{}, error) {
-			p := pb.FieldsPBS{}
+			p := pb.FieldsSPB{}
 			err := proto.Unmarshal(b, &p)
 			return &p, err
 		}

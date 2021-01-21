@@ -18,7 +18,7 @@ import (
 // StartStructPB sends fields to a grpc server with structpb type.
 func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
-		stream pb.TCPDog_TracepointPBSClient
+		stream pb.TCPDog_TracepointSPBClient
 		conn   *grpc.ClientConn
 	)
 
@@ -44,7 +44,7 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 			}
 
 			client := pb.NewTCPDogClient(conn)
-			stream, err = client.TracepointPBS(ctx)
+			stream, err = client.TracepointSPB(ctx)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
 				continue
@@ -64,7 +64,7 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 	return nil
 }
 
-func structpb(ctx context.Context, stream pb.TCPDog_TracepointPBSClient, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
+func structpb(ctx context.Context, stream pb.TCPDog_TracepointSPBClient, tp config.Tracepoint, bufpool *sync.Pool, ch chan *bytes.Buffer) error {
 	var (
 		cfg = config.FromContext(ctx)
 		spb = helper.NewStructPB(cfg.Fields[tp.Fields])
@@ -75,7 +75,7 @@ func structpb(ctx context.Context, stream pb.TCPDog_TracepointPBSClient, tp conf
 	for {
 		select {
 		case buf = <-ch:
-			err = stream.Send(&pb.FieldsPBS{
+			err = stream.Send(&pb.FieldsSPB{
 				Fields: spb.Unmarshal(buf),
 			})
 			if err != nil {

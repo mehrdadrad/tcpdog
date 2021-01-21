@@ -91,7 +91,7 @@ func (i *influxdb) getPointMaker(ser string) func(fi interface{}) *write.Point {
 	case "json":
 		return i.pointJSON
 	case "spb":
-		return i.pointPBS
+		return i.pointSPB
 	case "pb":
 		return i.pointPB
 	}
@@ -99,15 +99,15 @@ func (i *influxdb) getPointMaker(ser string) func(fi interface{}) *write.Point {
 	return nil
 }
 
-// pointPBS returns influxdb pointPBS with geo (if available)
-func (i *influxdb) pointPBS(fi interface{}) *write.Point {
+// pointSPB returns influxdb pointSPB with geo (if available)
+func (i *influxdb) pointSPB(fi interface{}) *write.Point {
 	var (
 		tags      = map[string]string{}
 		fields    = map[string]interface{}{}
 		timestamp time.Time
 	)
 
-	f := fi.(*pb.FieldsPBS)
+	f := fi.(*pb.FieldsSPB)
 
 	for key, field := range f.Fields.Fields {
 		if value, ok := field.GetKind().(*structpb.Value_StringValue); ok {

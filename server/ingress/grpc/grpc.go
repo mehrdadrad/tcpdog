@@ -33,8 +33,8 @@ func (s *Server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
 	}
 }
 
-// TracepointPBS receives struct protobuf messages
-func (s *Server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
+// TracepointSPB receives struct protobuf messages
+func (s *Server) TracepointSPB(srv pb.TCPDog_TracepointSPBServer) error {
 	for {
 		fields, err := srv.Recv()
 		if err != nil {

@@ -141,7 +141,7 @@ func (e *elastic) itemJSON(fi interface{}) *esutil.BulkIndexerItem {
 }
 
 func (e *elastic) itemSPB(fi interface{}) *esutil.BulkIndexerItem {
-	f := fi.(*pb.FieldsPBS)
+	f := fi.(*pb.FieldsSPB)
 
 	if e.geo != nil {
 		if gv, ok := f.Fields.Fields[e.cfg.GeoField]; ok {

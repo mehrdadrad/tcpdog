@@ -25,7 +25,7 @@ var (
 
 type server struct {
 	ch1 *pb.Fields
-	ch2 *pb.FieldsPBS
+	ch2 *pb.FieldsSPB
 }
 
 func (s *server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
@@ -40,7 +40,7 @@ func (s *server) Tracepoint(srv pb.TCPDog_TracepointServer) error {
 	}
 }
 
-func (s *server) TracepointPBS(srv pb.TCPDog_TracepointPBSServer) error {
+func (s *server) TracepointSPB(srv pb.TCPDog_TracepointSPBServer) error {
 	for {
 		f, err := srv.Recv()
 		if err != nil {
