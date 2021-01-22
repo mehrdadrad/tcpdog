@@ -34,10 +34,10 @@ func TestGetLogger(t *testing.T) {
 	zCfg := &zap.Config{}
 	json.Unmarshal(rawJSON, zCfg)
 
-	assert.NotNil(t, getLogger(zCfg))
-	assert.Nil(t, getLogger(nil))
+	assert.NotNil(t, GetLogger(zCfg))
+	assert.Nil(t, GetLogger(nil))
 }
 
 func TestGetDefaultLogger(t *testing.T) {
-	assert.NotNil(t, getDefaultLogger())
+	assert.NotNil(t, GetDefaultLogger())
 }

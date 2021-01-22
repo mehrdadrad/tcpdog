@@ -1,15 +1,16 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/credentials"
 	yml "gopkg.in/yaml.v3"
 
@@ -17,17 +18,6 @@ import (
 )
 
 type ctxKey string
-
-// Config represents server configuration
-type Config struct {
-	Ingress   map[string]Ingress
-	Ingestion map[string]Ingestion
-	Flow      []Flow
-	Geo       Geo
-	Log       *zap.Config
-
-	logger *zap.Logger
-}
 
 // Geo represents a geo
 type Geo struct {
@@ -63,13 +53,47 @@ type TLSConfig struct {
 	CAFile   string `yaml:"caFile"`
 }
 
+// CLIRequest represents cli request
 type CLIRequest struct {
 	Config string
+}
+
+// Config represents server configuration
+type Config struct {
+	Ingress   map[string]Ingress
+	Ingestion map[string]Ingestion
+	Flow      []Flow
+	Geo       Geo
+	Log       *zap.Config
+
+	logger *zap.Logger
 }
 
 // Logger returns logger
 func (c *Config) Logger() *zap.Logger {
 	return c.logger
+}
+
+// SetMockLogger ...
+func (c *Config) SetMockLogger(scheme string) *MemSink {
+	var err error
+
+	cfg := zap.NewDevelopmentConfig()
+	ms := &MemSink{new(bytes.Buffer)}
+	zap.RegisterSink(scheme, func(*url.URL) (zap.Sink, error) {
+		return ms, nil
+	})
+
+	cfg.OutputPaths = []string{scheme + "://"}
+	cfg.DisableStacktrace = true
+	cfg.Encoding = "json"
+
+	c.logger, err = cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return ms
 }
 
 // WithContext returns new context including configuration
@@ -99,8 +123,6 @@ func load(file string) (*Config, error) {
 		return nil, err
 	}
 
-	c.logger = getLogger(c.Log)
-
 	return c, nil
 }
 
@@ -125,67 +147,22 @@ func Get(cli *CLIRequest) (*Config, error) {
 		return nil, err
 	}
 
-	config.logger = getLogger(config.Log)
+	config.logger = ac.GetLogger(config.Log)
 
 	return config, nil
 }
 
 func setDefault(conf *Config) {
-	// set default logger
 	if conf.logger == nil {
-		conf.logger = getDefaultLogger()
+		conf.logger = ac.GetDefaultLogger()
 	}
 
-	// geo
 	setGeoDefault(&conf.Geo)
-}
-
-// getDefaultLogger creates default zap logger.
-func getDefaultLogger() *zap.Logger {
-	var cfg = zap.Config{
-		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
-		EncoderConfig:    zap.NewProductionEncoderConfig(),
-		Encoding:         "console",
-		OutputPaths:      []string{"stdout"},
-		ErrorOutputPaths: []string{"stderr"},
-	}
-
-	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	cfg.EncoderConfig.EncodeCaller = nil
-	cfg.DisableStacktrace = true
-
-	logger, _ := cfg.Build()
-
-	return logger
-}
-
-func getLogger(zCfg *zap.Config) *zap.Logger {
-	if zCfg == nil {
-		return nil
-	}
-
-	zCfg.Encoding = "console"
-	zCfg.EncoderConfig = zap.NewProductionEncoderConfig()
-	zCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	zCfg.EncoderConfig.EncodeCaller = nil
-	zCfg.DisableStacktrace = true
-
-	logger, err := zCfg.Build()
-	if err != nil {
-		exit(err)
-	}
-
-	return logger
 }
 
 // Transform converts general configuration to concrete type
 func Transform(cfg map[string]interface{}, d interface{}) error {
-	b, err := json.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(b, d)
+	return ac.Transform(cfg, d)
 }
 
 func exit(err error) {
@@ -235,4 +212,23 @@ func GetCredsServer(cfg *TLSConfig) (credentials.TransportCredentials, error) {
 	// TODO
 	// mTLS
 	return nil, nil
+}
+
+// MemSink represents logging in memory
+type MemSink struct {
+	*bytes.Buffer
+}
+
+// Close is required method for sink interface.
+func (s *MemSink) Close() error { return nil }
+
+// Sync is required method for sink interface.
+func (s *MemSink) Sync() error { return nil }
+
+// Unmarshal returns decoded data as key value and reset the buffer.
+func (s *MemSink) Unmarshal() map[string]string {
+	defer s.Reset()
+	v := make(map[string]string)
+	json.Unmarshal(s.Bytes(), &v)
+	return v
 }

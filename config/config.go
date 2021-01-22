@@ -132,7 +132,7 @@ func setDefault(conf *Config) {
 
 	// set default logger
 	if conf.logger == nil {
-		conf.logger = getDefaultLogger()
+		conf.logger = GetDefaultLogger()
 	}
 }
 
@@ -155,7 +155,7 @@ func Get(cli *CLIRequest) (*Config, error) {
 			return nil, err
 		}
 
-		config.logger = getLogger(config.Log)
+		config.logger = GetLogger(config.Log)
 
 		return config, nil
 	}
@@ -210,8 +210,8 @@ func cliFieldsStrToSlice(fs []string) []Field {
 	return fields
 }
 
-// getDefaultLogger creates default zap logger.
-func getDefaultLogger() *zap.Logger {
+// GetDefaultLogger creates default zap logger.
+func GetDefaultLogger() *zap.Logger {
 	var cfg = zap.Config{
 		Level:            zap.NewAtomicLevelAt(zapcore.InfoLevel),
 		EncoderConfig:    zap.NewProductionEncoderConfig(),
@@ -229,7 +229,7 @@ func getDefaultLogger() *zap.Logger {
 	return logger
 }
 
-func getLogger(zCfg *zap.Config) *zap.Logger {
+func GetLogger(zCfg *zap.Config) *zap.Logger {
 	if zCfg == nil {
 		return nil
 	}
