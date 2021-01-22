@@ -87,25 +87,30 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 
 }
 
+// iWorker creates elasticsearch item
 func (e *elastic) iWorker(ctx context.Context, ch chan interface{}, iCh chan *esutil.BulkIndexerItem) {
 	var fields interface{}
 
+	logger := config.FromContext(ctx).Logger()
 	getItem := e.getItemMaker(e.serialization)
 
 	for {
 		select {
 		case fields = <-ch:
-			item := getItem(fields)
-			if item != nil {
-				iCh <- item
+			item, err := getItem(fields)
+			if err != nil {
+				logger.Error("es.worker", zap.Error(err))
+				continue
 			}
+
+			iCh <- item
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func (e *elastic) getItemMaker(ser string) func(fi interface{}) *esutil.BulkIndexerItem {
+func (e *elastic) getItemMaker(ser string) func(fi interface{}) (*esutil.BulkIndexerItem, error) {
 	switch ser {
 	case "json":
 		return e.itemJSON
@@ -118,7 +123,7 @@ func (e *elastic) getItemMaker(ser string) func(fi interface{}) *esutil.BulkInde
 	return nil
 }
 
-func (e *elastic) itemJSON(fi interface{}) *esutil.BulkIndexerItem {
+func (e *elastic) itemJSON(fi interface{}) (*esutil.BulkIndexerItem, error) {
 	f := fi.(map[string]interface{})
 
 	if e.geo != nil {
@@ -131,16 +136,16 @@ func (e *elastic) itemJSON(fi interface{}) *esutil.BulkIndexerItem {
 
 	b, err := json.Marshal(f)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &esutil.BulkIndexerItem{
 		Action: "index",
 		Body:   bytes.NewReader(b),
-	}
+	}, nil
 }
 
-func (e *elastic) itemSPB(fi interface{}) *esutil.BulkIndexerItem {
+func (e *elastic) itemSPB(fi interface{}) (*esutil.BulkIndexerItem, error) {
 	f := fi.(*pb.FieldsSPB)
 
 	if e.geo != nil {
@@ -153,16 +158,16 @@ func (e *elastic) itemSPB(fi interface{}) *esutil.BulkIndexerItem {
 
 	b, err := protojson.Marshal(f.Fields)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &esutil.BulkIndexerItem{
 		Action: "index",
 		Body:   bytes.NewReader(b),
-	}
+	}, nil
 }
 
-func (e *elastic) itemPB(fi interface{}) *esutil.BulkIndexerItem {
+func (e *elastic) itemPB(fi interface{}) (*esutil.BulkIndexerItem, error) {
 	var geoKV map[string]string
 
 	f := fi.(*pb.Fields)
@@ -186,11 +191,11 @@ func (e *elastic) itemPB(fi interface{}) *esutil.BulkIndexerItem {
 
 	b, err := protojson.Marshal(f)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	return &esutil.BulkIndexerItem{
 		Action: "index",
 		Body:   bytes.NewReader(b),
-	}
+	}, nil
 }
