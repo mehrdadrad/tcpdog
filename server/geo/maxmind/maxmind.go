@@ -165,6 +165,7 @@ func (g *Geo) getCityASN(ipStr string, ASN bool) map[string]string {
 func (g *Geo) getCityLoc(ipStr string) map[string]string {
 	return g.getCityLocASN(ipStr, false)
 }
+
 func (g *Geo) getCityLocASN(ipStr string, ASN bool) map[string]string {
 	var (
 		cRecord cityLocRecord

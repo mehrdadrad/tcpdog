@@ -47,12 +47,14 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 			stream, err = client.TracepointSPB(ctx)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
+				conn.Close()
 				continue
 			}
 
 			err = structpb(ctx, stream, tp, bufpool, ch)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
+				conn.Close()
 				continue
 			}
 
@@ -146,12 +148,14 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 			stream, err = client.Tracepoint(ctx)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
+				conn.Close()
 				continue
 			}
 
 			err = protobuf(ctx, stream, bufpool, ch)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
+				conn.Close()
 				continue
 			}
 

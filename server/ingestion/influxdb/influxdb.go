@@ -67,7 +67,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	}()
 }
 
-// pWorker creates influxdb points from struct-pb
+// pWorker creates influxdb point
 func (i *influxdb) pWorker(ctx context.Context, ch chan interface{}, pCh chan *write.Point) {
 	var fields interface{}
 

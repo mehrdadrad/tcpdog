@@ -66,6 +66,7 @@ func TestStart(t *testing.T) {
 	cancel()
 
 	time.Sleep(time.Second)
+	server.Close()
 }
 
 func TestPointJSON(t *testing.T) {
