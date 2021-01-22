@@ -12,7 +12,9 @@ var cfg = map[string]string{
 	"path-asn":  "./test_data/GeoLite2-ASN-Test.mmdb",
 }
 
-func TestMaxmind(t *testing.T) {
+func TestGetCity(t *testing.T) {
+	cfg["level"] = "city"
+
 	c := config.Config{}
 	g := New()
 	g.Init(c.Logger(), cfg)
@@ -23,12 +25,58 @@ func TestMaxmind(t *testing.T) {
 	assert.Equal(t, "Boxford", r["City"])
 	assert.Equal(t, "United Kingdom", r["Country"])
 	assert.Equal(t, "England", r["Region"])
+}
 
-	r = g.Get("70.160.0.1")
+func TestGetASN(t *testing.T) {
+	cfg["level"] = "asn"
+
+	c := config.Config{}
+	g := New()
+	g.Init(c.Logger(), cfg)
+
+	r := g.Get("70.160.0.1")
+	assert.Equal(t, "22773", r["ASN"])
+	assert.Equal(t, "Cox Communications Inc.", r["ASNOrg"])
+}
+func TestGetCityASN(t *testing.T) {
+	cfg["level"] = "city-asn"
+
+	c := config.Config{}
+	g := New()
+	g.Init(c.Logger(), cfg)
+
+	r := g.Get("70.160.0.1")
 	assert.Equal(t, "22773", r["ASN"])
 	assert.Equal(t, "Cox Communications Inc.", r["ASNOrg"])
 }
 
+func TestGetCityLoc(t *testing.T) {
+	cfg["level"] = "city-loc"
+
+	c := config.Config{}
+	g := New()
+	g.Init(c.Logger(), cfg)
+
+	r := g.Get("2.125.160.217")
+	assert.Equal(t, "GB", r["CCode"])
+	assert.Equal(t, "ENG", r["CSCode"])
+	assert.Equal(t, "Boxford", r["City"])
+	assert.Equal(t, "United Kingdom", r["Country"])
+	assert.Equal(t, "England", r["Region"])
+	assert.Equal(t, "51.750000,-1.250000", r["GeoLocation"])
+}
+
+func TestGetCityLocASN(t *testing.T) {
+	cfg["level"] = "city-loc-asn"
+
+	c := config.Config{}
+	g := New()
+	g.Init(c.Logger(), cfg)
+
+	r := g.Get("70.160.0.1")
+	assert.Equal(t, "22773", r["ASN"])
+	assert.Equal(t, "Cox Communications Inc.", r["ASNOrg"])
+}
 func BenchmarkMaxmindParallel(b *testing.B) {
 	c := config.Config{}
 	g := New()
