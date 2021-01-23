@@ -53,8 +53,8 @@ type TLSConfig struct {
 	CAFile   string `yaml:"caFile"`
 }
 
-// CLIRequest represents cli request
-type CLIRequest struct {
+// cliRequest represents cli request
+type cliRequest struct {
 	Config string
 }
 
@@ -126,7 +126,8 @@ func load(file string) (*Config, error) {
 	return c, nil
 }
 
-func Get(cli *CLIRequest) (*Config, error) {
+// Get returns configuration
+func Get(args []string, version string) (*Config, error) {
 	var (
 		config *Config
 		err    error
@@ -137,6 +138,12 @@ func Get(cli *CLIRequest) (*Config, error) {
 			setDefault(config)
 		}
 	}()
+
+	// get cli request
+	cli, err := get(args, version)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(cli.Config) < 1 {
 		cli.Config = "/etc/tcpdog/server.yaml"
