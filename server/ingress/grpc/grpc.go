@@ -6,6 +6,7 @@ import (
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 
 	pb "github.com/mehrdadrad/tcpdog/proto"
 	"github.com/mehrdadrad/tcpdog/server/config"
@@ -88,5 +89,16 @@ func getServerOpts(gCfg *Config) ([]grpc.ServerOption, error) {
 		opts = append(opts, grpc.Creds(creds))
 	}
 
+	opts = append(opts, grpc.StreamInterceptor(serverInterceptor))
+
 	return opts, nil
+}
+
+func serverInterceptor(srv interface{}, ss grpc.ServerStream,
+	info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	if p, ok := peer.FromContext(ss.Context()); ok {
+		srv.(*Server).logger.Info("grpc.connect", zap.String("peer", p.Addr.String()))
+	}
+
+	return handler(srv, ss)
 }
