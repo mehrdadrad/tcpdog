@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 	"strings"
 	"text/template"
@@ -14,12 +15,13 @@ var flags = []cli.Flag{
 }
 
 // Get returns cli request
-func Get(args []string) (*config.CLIRequest, error) {
+func Get(args []string, version string) (*config.CLIRequest, error) {
 	var r = &config.CLIRequest{}
 
 	app := &cli.App{
-		Flags:  flags,
-		Action: action(r),
+		Version: version,
+		Flags:   flags,
+		Action:  action(r),
 	}
 
 	err := app.Run(args)
@@ -43,6 +45,17 @@ options:
    {{range .VisibleFlags}}{{.}}
    {{end}}
 `
+
+	cli.VersionFlag = &cli.BoolFlag{
+		Name: "version", Aliases: []string{"v"},
+		Usage: "print only the version",
+	}
+
+	cli.VersionPrinter = func(c *cli.Context) {
+		fmt.Printf("TCPDog version: %s [server]\n", c.App.Version)
+		cli.OsExiter(0)
+	}
+
 	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
 		funcMap := template.FuncMap{
 			"join": strings.Join,
