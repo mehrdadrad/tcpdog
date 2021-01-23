@@ -25,7 +25,7 @@ type elastic struct {
 }
 
 // Start starts ingestion data points to influxdb
-func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
+func Start(ctx context.Context, name string, ser string, ch chan interface{}) error {
 	var g geo.Geoer
 
 	cfg := config.FromContext(ctx)
@@ -33,12 +33,12 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 
 	eCfg, err := elasticSearchConfig(cfg.Ingestion[name].Config)
 	if err != nil {
-		logger.Fatal("es.config", zap.Error(err))
+		return err
 	}
 
 	client, err := elasticsearch.NewClient(eCfg.clientConfig)
 	if err != nil {
-		logger.Fatal("es.client", zap.Error(err))
+		return err
 	}
 
 	indexer, err := esutil.NewBulkIndexer(esutil.BulkIndexerConfig{
@@ -48,11 +48,13 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		FlushInterval: time.Duration(eCfg.FlushInterval) * time.Second,
 
 		OnError: func(ctx context.Context, err error) {
-			logger.Error("es.bulkindexer", zap.Error(err))
+			if err != context.Canceled {
+				logger.Error("es.bulkindexer", zap.Error(err))
+			}
 		},
 	})
 	if err != nil {
-		logger.Error("es.indexer", zap.Error(err))
+		return err
 	}
 
 	// if geo is available
@@ -85,6 +87,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		}
 	}()
 
+	return nil
 }
 
 // iWorker creates elasticsearch item

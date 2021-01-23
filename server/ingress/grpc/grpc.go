@@ -51,13 +51,13 @@ func (s *Server) TracepointSPB(srv pb.TCPDog_TracepointSPBServer) error {
 }
 
 // Start starts gRPC server
-func Start(ctx context.Context, name string, ch chan interface{}) {
+func Start(ctx context.Context, name string, ch chan interface{}) error {
 	gCfg := grpcConfig(config.FromContext(ctx).Ingress[name].Config)
 	logger := config.FromContext(ctx).Logger()
 
 	l, err := net.Listen("tcp", gCfg.Addr)
 	if err != nil {
-		logger.Fatal("grpc", zap.Error(err))
+		return err
 	}
 	srv := Server{
 		ch:     ch,
@@ -66,7 +66,7 @@ func Start(ctx context.Context, name string, ch chan interface{}) {
 
 	opts, err := getServerOpts(gCfg)
 	if err != nil {
-		logger.Fatal("grpc", zap.Error(err))
+		return err
 	}
 
 	gServer := grpc.NewServer(opts...)
@@ -76,6 +76,8 @@ func Start(ctx context.Context, name string, ch chan interface{}) {
 		err := gServer.Serve(l)
 		logger.Fatal("grpc", zap.Error(err))
 	}()
+
+	return nil
 }
 
 func getServerOpts(gCfg *Config) ([]grpc.ServerOption, error) {

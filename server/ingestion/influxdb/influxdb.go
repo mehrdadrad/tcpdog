@@ -7,7 +7,6 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	pb "github.com/mehrdadrad/tcpdog/proto"
@@ -24,17 +23,15 @@ type influxdb struct {
 }
 
 // Start starts ingestion data points to influxdb
-func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
+func Start(ctx context.Context, name string, ser string, ch chan interface{}) error {
 	var g geo.Geoer
 
 	cfg := config.FromContext(ctx)
 	iCfg := influxDBConfig(cfg.Ingestion[name].Config)
 
-	logger := cfg.Logger()
-
 	opts, err := influxdbOpts(iCfg)
 	if err != nil {
-		logger.Fatal("influxdb", zap.Error(err))
+		return err
 	}
 
 	client := influxdb2.NewClientWithOptions(iCfg.URL, iCfg.Token, opts)
@@ -65,6 +62,8 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // pWorker creates influxdb point

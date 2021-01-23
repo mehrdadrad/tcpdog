@@ -49,14 +49,14 @@ func newConsumerGroup(kCfg *Config) (*consumerGroup, error) {
 	}, nil
 }
 
-// Start ...
-func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
+// Start starts a consumer group
+func Start(ctx context.Context, name string, ser string, ch chan interface{}) error {
 	kCfg := influxConfig(config.FromContext(ctx).Ingress[name].Config)
 	logger := config.FromContext(ctx).Logger()
 
 	cg, err := newConsumerGroup(kCfg)
 	if err != nil {
-		logger.Fatal("kafka.consumer1", zap.Error(err))
+		return err
 	}
 
 	cg.serialization = ser
@@ -64,7 +64,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	// error handling
 	go func() {
 		for err := range cg.group.Errors() {
-			logger.Error("kafka.consumer2", zap.Error(err))
+			logger.Error("kafka.consumer", zap.Error(err))
 		}
 	}()
 
@@ -77,7 +77,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 		for {
 			err := cg.group.Consume(ctx, []string{kCfg.Topic}, handler)
 			if err != nil {
-				logger.Fatal("kafka.consumer3", zap.Error(err))
+				logger.Fatal("kafka.consumer", zap.Error(err))
 			}
 		}
 	}()
@@ -85,6 +85,8 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) {
 	for i := 0; i < kCfg.Workers; i++ {
 		go cg.worker(ctx, ch, handler.ch)
 	}
+
+	return nil
 }
 
 func (k *consumerGroup) consumerGroupCleanup() {
