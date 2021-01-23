@@ -9,18 +9,18 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
-var flags = []cli.Flag{
+var flagsServer = []cli.Flag{
 	&cli.StringFlag{Name: "config", Aliases: []string{"c"}, Value: "", Usage: "path to a file in yaml format to read configuration"},
 }
 
-// Get returns cli request
-func get(args []string, version string) (*cliRequest, error) {
-	var r = &cliRequest{}
+// Get returns server cli request
+func getServer(args []string, version string) (*serverCLIRequest, error) {
+	var r = &serverCLIRequest{}
 
 	app := &cli.App{
 		Version: version,
-		Flags:   flags,
-		Action:  action(r),
+		Flags:   flagsServer,
+		Action:  actionServer(r),
 	}
 
 	err := app.Run(args)
@@ -28,7 +28,7 @@ func get(args []string, version string) (*cliRequest, error) {
 	return r, err
 }
 
-func action(r *cliRequest) cli.ActionFunc {
+func actionServer(r *serverCLIRequest) cli.ActionFunc {
 	return func(c *cli.Context) error {
 		r.Config = c.String("config")
 
@@ -36,7 +36,7 @@ func action(r *cliRequest) cli.ActionFunc {
 	}
 }
 
-func init() {
+func initCLIServer() {
 	cli.AppHelpTemplate = `usage: tcpdog server options
 	
 options:
@@ -44,11 +44,6 @@ options:
    {{range .VisibleFlags}}{{.}}
    {{end}}
 `
-
-	cli.VersionFlag = &cli.BoolFlag{
-		Name: "version", Aliases: []string{"v"},
-		Usage: "print only the version",
-	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("TCPDog version: %s [server]\n", c.App.Version)

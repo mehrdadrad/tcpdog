@@ -8,17 +8,17 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 	"go.uber.org/zap"
 
-	"github.com/mehrdadrad/tcpdog/server/config"
-	"github.com/mehrdadrad/tcpdog/server/ingestion/elasticsearch"
-	"github.com/mehrdadrad/tcpdog/server/ingestion/influxdb"
-	"github.com/mehrdadrad/tcpdog/server/ingress/grpc"
-	"github.com/mehrdadrad/tcpdog/server/ingress/kafka"
+	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/ingestion/elasticsearch"
+	"github.com/mehrdadrad/tcpdog/ingestion/influxdb"
+	"github.com/mehrdadrad/tcpdog/ingress/grpc"
+	"github.com/mehrdadrad/tcpdog/ingress/kafka"
 )
 
 var version string
 
 func main() {
-	cfg, err := config.Get(os.Args, version)
+	cfg, err := config.GetServer(os.Args, version)
 	if err != nil {
 		exit(err)
 	}
@@ -41,7 +41,7 @@ func main() {
 }
 
 func ingress(ctx context.Context, flow config.Flow, ch chan interface{}) {
-	cfg := config.FromContext(ctx)
+	cfg := config.FromContextServer(ctx)
 	logger := cfg.Logger()
 
 	switch cfg.Ingress[flow.Ingress].Type {
@@ -64,7 +64,7 @@ func ingress(ctx context.Context, flow config.Flow, ch chan interface{}) {
 }
 
 func ingestion(ctx context.Context, flow config.Flow, ch chan interface{}) {
-	cfg := config.FromContext(ctx)
+	cfg := config.FromContextServer(ctx)
 	logger := cfg.Logger()
 
 	switch cfg.Ingestion[flow.Ingestion].Type {

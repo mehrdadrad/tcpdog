@@ -28,6 +28,8 @@ var flags = []cli.Flag{
 func get(args []string, version string) (*cliRequest, error) {
 	var r = &cliRequest{}
 
+	initCLIAgent()
+
 	app := &cli.App{
 		Version: version,
 		Flags:   flags,
@@ -78,7 +80,7 @@ func checkSudo() error {
 	return nil
 }
 
-func init() {
+func initCLIAgent() {
 	cli.AppHelpTemplate = `usage: {{.HelpName}} options
 	
 options:
@@ -86,11 +88,6 @@ options:
    {{range .VisibleFlags}}{{.}}
    {{end}}
 `
-
-	cli.VersionFlag = &cli.BoolFlag{
-		Name: "version", Aliases: []string{"v"},
-		Usage: "print only the version",
-	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("TCPDog version: %s [agent]\n", c.App.Version)
