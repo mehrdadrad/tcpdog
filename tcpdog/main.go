@@ -9,19 +9,15 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 	"go.uber.org/zap"
 
-	"github.com/mehrdadrad/tcpdog/cli"
 	"github.com/mehrdadrad/tcpdog/config"
 	"github.com/mehrdadrad/tcpdog/ebpf"
 	"github.com/mehrdadrad/tcpdog/egress"
 )
 
-func main() {
-	r, err := cli.Get(os.Args)
-	if err != nil {
-		exit(err)
-	}
+var version string
 
-	cfg, err := config.Get(r)
+func main() {
+	cfg, err := config.Get(os.Args, version)
 	if err != nil {
 		exit(err)
 	}

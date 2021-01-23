@@ -8,7 +8,6 @@ import (
 	"github.com/sethvargo/go-signalcontext"
 	"go.uber.org/zap"
 
-	"github.com/mehrdadrad/tcpdog/server/cli"
 	"github.com/mehrdadrad/tcpdog/server/config"
 	"github.com/mehrdadrad/tcpdog/server/ingestion/elasticsearch"
 	"github.com/mehrdadrad/tcpdog/server/ingestion/influxdb"
@@ -19,12 +18,7 @@ import (
 var version string
 
 func main() {
-	r, err := cli.Get(os.Args, version)
-	if err != nil {
-		exit(err)
-	}
-
-	cfg, err := config.Get(r)
+	cfg, err := config.Get(os.Args, version)
 	if err != nil {
 		exit(err)
 	}

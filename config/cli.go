@@ -1,4 +1,4 @@
-package cli
+package config
 
 import (
 	"errors"
@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/mehrdadrad/tcpdog/config"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -26,8 +25,8 @@ var flags = []cli.Flag{
 }
 
 // Get returns cli config.CLIRequested parameters.
-func Get(args []string, version string) (*config.CLIRequest, error) {
-	var r = &config.CLIRequest{}
+func get(args []string, version string) (*cliRequest, error) {
+	var r = &cliRequest{}
 
 	app := &cli.App{
 		Version: version,
@@ -40,7 +39,7 @@ func Get(args []string, version string) (*config.CLIRequest, error) {
 	return r, err
 }
 
-func action(r *config.CLIRequest) cli.ActionFunc {
+func action(r *cliRequest) cli.ActionFunc {
 	return func(c *cli.Context) error {
 
 		if err := checkSudo(); err != nil {

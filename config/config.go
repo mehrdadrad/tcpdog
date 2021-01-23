@@ -1,12 +1,14 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 
 	"go.uber.org/zap"
@@ -27,7 +29,7 @@ type Config struct {
 	logger *zap.Logger
 }
 
-// TLSConfig represents TLS configuration
+// TLSConfig represents TLS configuration.
 type TLSConfig struct {
 	Enable   bool
 	Insecure bool
@@ -36,14 +38,14 @@ type TLSConfig struct {
 	CAFile   string `yaml:"caFile"`
 }
 
-// EgressConfig represents egress configuration
+// EgressConfig represents egress configuration.
 type EgressConfig struct {
 	Type   string
 	Config map[string]interface{}
 }
 
-// CLIRequest represents cli requests.
-type CLIRequest struct {
+// cliRequest represents cli requests.
+type cliRequest struct {
 	Tracepoint string
 	Fields     []string
 	IPv4       bool
@@ -55,21 +57,44 @@ type CLIRequest struct {
 	Config     string
 }
 
+// Logger returns logger.
 func (c *Config) Logger() *zap.Logger {
 	return c.logger
 }
 
-// WithContext returns new context including configuration
+// WithContext returns new context including configuration.
 func (c *Config) WithContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKey("cfg"), c)
 }
 
-// FromContext returns configuration from context
+// SetMockLogger sets in memory logger
+func (c *Config) SetMockLogger(scheme string) *MemSink {
+	var err error
+
+	cfg := zap.NewDevelopmentConfig()
+	ms := &MemSink{new(bytes.Buffer)}
+	zap.RegisterSink(scheme, func(*url.URL) (zap.Sink, error) {
+		return ms, nil
+	})
+
+	cfg.OutputPaths = []string{scheme + "://"}
+	cfg.DisableStacktrace = true
+	cfg.Encoding = "json"
+
+	c.logger, err = cfg.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return ms
+}
+
+// FromContext returns configuration from context.
 func FromContext(ctx context.Context) *Config {
 	return ctx.Value(ctxKey("cfg")).(*Config)
 }
 
-// Tracepoint represents a tracepoint's config
+// Tracepoint represents a tracepoint's config.
 type Tracepoint struct {
 	Name     string `yaml:"name"`
 	Fields   string `yaml:"fields"`
@@ -81,14 +106,14 @@ type Tracepoint struct {
 	Egress   string `yaml:"egress"`
 }
 
-// Field represents a field
+// Field represents a field.
 type Field struct {
 	Name   string `yaml:"name"`
 	Math   string `yaml:"math,omitempty"`
 	Filter string `yaml:"filter,omitempty"`
 }
 
-// GetTPFields returns a tracepoint fields slice
+// GetTPFields returns a tracepoint fields.
 func (c *Config) GetTPFields(name string) []string {
 	fields := []string{}
 	if v, ok := c.Fields[name]; ok {
@@ -137,7 +162,7 @@ func setDefault(conf *Config) {
 }
 
 // Get returns the configuration based on the file or cli
-func Get(cli *CLIRequest) (*Config, error) {
+func Get(args []string, version string) (*Config, error) {
 	var (
 		config *Config
 		err    error
@@ -148,6 +173,11 @@ func Get(cli *CLIRequest) (*Config, error) {
 			setDefault(config)
 		}
 	}()
+
+	cli, err := get(args, version)
+	if err != nil {
+		return nil, err
+	}
 
 	if cli.Config != "" {
 		config, err = load(cli.Config)
@@ -165,7 +195,7 @@ func Get(cli *CLIRequest) (*Config, error) {
 	return config, err
 }
 
-func cliToConfig(cli *CLIRequest) (*Config, error) {
+func cliToConfig(cli *cliRequest) (*Config, error) {
 	var inet []int
 
 	if cli.IPv4 {
@@ -229,6 +259,7 @@ func GetDefaultLogger() *zap.Logger {
 	return logger
 }
 
+// GetLogger returns logger based on the configuration.
 func GetLogger(zCfg *zap.Config) *zap.Logger {
 	if zCfg == nil {
 		return nil
@@ -248,6 +279,9 @@ func GetLogger(zCfg *zap.Config) *zap.Logger {
 	return logger
 }
 
+// Transform transforms one data structure to another
+// it uses to transform map[string]interface{} config
+// to specific struct.
 func Transform(cfg interface{}, d interface{}) error {
 	b, err := json.Marshal(cfg)
 	if err != nil {
@@ -257,6 +291,7 @@ func Transform(cfg interface{}, d interface{}) error {
 	return json.Unmarshal(b, d)
 }
 
+// GetTLS returns tls.config based on the configuration.
 func GetTLS(cfg *TLSConfig) (*tls.Config, error) {
 	var (
 		tlsConfig  = &tls.Config{}
@@ -293,12 +328,32 @@ func GetTLS(cfg *TLSConfig) (*tls.Config, error) {
 	return tlsConfig, nil
 }
 
+// GetCreds returns transport credentials based on the tls config.
 func GetCreds(cfg *TLSConfig) (credentials.TransportCredentials, error) {
 	tlsConfig, err := GetTLS(cfg)
 	if err != nil {
 		return nil, nil
 	}
 	return credentials.NewTLS(tlsConfig), nil
+}
+
+// MemSink represents logging in memory
+type MemSink struct {
+	*bytes.Buffer
+}
+
+// Close is required method for sink interface.
+func (s *MemSink) Close() error { return nil }
+
+// Sync is required method for sink interface.
+func (s *MemSink) Sync() error { return nil }
+
+// Unmarshal returns decoded data as key value and reset the buffer.
+func (s *MemSink) Unmarshal() map[string]string {
+	defer s.Reset()
+	v := make(map[string]string)
+	json.Unmarshal(s.Bytes(), &v)
+	return v
 }
 
 func exit(err error) {
