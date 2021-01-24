@@ -34,10 +34,11 @@ func (h handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 
 func newConsumerGroup(kCfg *Config) (*consumerGroup, error) {
 	var err error
-	sConfig := sarama.NewConfig()
-	sConfig.ClientID = "tcpdog"
-	sConfig.Consumer.Offsets.Initial = sarama.OffsetOldest
-	sConfig.Version = sarama.V0_10_2_1
+
+	sConfig, err := saramaConfig(kCfg)
+	if err != nil {
+		return nil, err
+	}
 
 	group, err := sarama.NewConsumerGroup(kCfg.Brokers, "tcpdog", sConfig)
 	if err != nil {
@@ -51,7 +52,7 @@ func newConsumerGroup(kCfg *Config) (*consumerGroup, error) {
 
 // Start starts a consumer group
 func Start(ctx context.Context, name string, ser string, ch chan interface{}) error {
-	kCfg := influxConfig(config.FromContextServer(ctx).Ingress[name].Config)
+	kCfg := kafkaConfig(config.FromContextServer(ctx).Ingress[name].Config)
 	logger := config.FromContextServer(ctx).Logger()
 
 	cg, err := newConsumerGroup(kCfg)
@@ -64,7 +65,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) er
 	// error handling
 	go func() {
 		for err := range cg.group.Errors() {
-			logger.Error("kafka.consumer", zap.Error(err))
+			logger.Error("kafka", zap.Error(err))
 		}
 	}()
 
@@ -77,7 +78,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) er
 		for {
 			err := cg.group.Consume(ctx, []string{kCfg.Topic}, handler)
 			if err != nil {
-				logger.Fatal("kafka.consumer", zap.Error(err))
+				logger.Error("kafka", zap.Error(err))
 			}
 		}
 	}()

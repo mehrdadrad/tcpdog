@@ -10,21 +10,19 @@ import (
 
 // Config represents Kafka configuration
 type Config struct {
-	Workers        int      `yaml:"workers"`
-	Topic          string   `yaml:"topic"`
-	Brokers        []string `yaml:"brokers"`
-	Serialization  string   `yaml:"serialization"`
-	Compression    string   `yaml:"compression" `
-	RetryMax       int      `yaml:"retry-max"`
-	RequestSizeMax int32    `yaml:"request-size-max"`
-	RetryBackoff   int      `yaml:"retry-backoff"`
-	TLSEnabled     bool     `yaml:"tls-enabled"`
-	TLSCertFile    string   `yaml:"tls-cert"`
-	TLSKeyFile     string   `yaml:"tls-key"`
-	CAFile         string   `yaml:"ca-file"`
-	TLSSkipVerify  bool     `yaml:"tls-skip-verify"`
-	SASLUsername   string   `yaml:"sasl-username"`
-	SASLPassword   string   `yaml:"sasl-password"`
+	Workers        int
+	Topic          string
+	Brokers        []string
+	Serialization  string
+	Compression    string
+	RetryMax       int
+	RequestSizeMax int32
+	RetryBackoff   int
+
+	SASLUsername string
+	SASLPassword string
+
+	TLSConfig config.TLSConfig
 }
 
 func kafkaConfig(cfg map[string]interface{}) *Config {
@@ -33,9 +31,8 @@ func kafkaConfig(cfg map[string]interface{}) *Config {
 		Topic:          "tcpdog",
 		Serialization:  "json",
 		RequestSizeMax: 104857600,
-		RetryMax:       2,
-		RetryBackoff:   10,
-		TLSSkipVerify:  true,
+		RetryMax:       3,
+		RetryBackoff:   250, // Millisecond
 		Workers:        2,
 	}
 
@@ -46,24 +43,34 @@ func kafkaConfig(cfg map[string]interface{}) *Config {
 	return c
 }
 
-func saramaConfig(c *Config) *sarama.Config {
-	config := sarama.NewConfig()
+func saramaConfig(kCfg *Config) (*sarama.Config, error) {
+	sConfig := sarama.NewConfig()
 
-	config.ClientID = "tcpdog"
-	config.Producer.Retry.Max = c.RetryMax
-	config.Producer.Retry.Backoff = time.Duration(c.RetryBackoff) * time.Millisecond
-	sarama.MaxRequestSize = c.RequestSizeMax
+	sConfig.ClientID = "tcpdog"
+	sConfig.Producer.Retry.Max = kCfg.RetryMax
+	sConfig.Producer.Retry.Backoff = time.Duration(kCfg.RetryBackoff) * time.Millisecond
+	sarama.MaxRequestSize = kCfg.RequestSizeMax
 
-	switch c.Compression {
-	case "gzip":
-		config.Producer.Compression = sarama.CompressionGZIP
-	case "lz4":
-		config.Producer.Compression = sarama.CompressionLZ4
-	case "snappy":
-		config.Producer.Compression = sarama.CompressionSnappy
-	default:
-		config.Producer.Compression = sarama.CompressionNone
+	if kCfg.TLSConfig.Enable {
+		tlsConfig, err := config.GetTLS(&kCfg.TLSConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		sConfig.Net.TLS.Enable = true
+		sConfig.Net.TLS.Config = tlsConfig
 	}
 
-	return config
+	switch kCfg.Compression {
+	case "gzip":
+		sConfig.Producer.Compression = sarama.CompressionGZIP
+	case "lz4":
+		sConfig.Producer.Compression = sarama.CompressionLZ4
+	case "snappy":
+		sConfig.Producer.Compression = sarama.CompressionSnappy
+	default:
+		sConfig.Producer.Compression = sarama.CompressionNone
+	}
+
+	return sConfig, nil
 }

@@ -30,10 +30,14 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	var (
 		cfg  = config.FromContext(ctx)
 		kCfg = kafkaConfig(cfg.Egress[tp.Egress].Config)
-		sCfg = saramaConfig(kCfg)
 	)
 
-	err := sCfg.Validate()
+	sCfg, err := saramaConfig(kCfg)
+	if err != nil {
+		return err
+	}
+
+	err = sCfg.Validate()
 	if err != nil {
 		return err
 	}
