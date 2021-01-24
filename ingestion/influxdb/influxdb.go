@@ -152,13 +152,13 @@ func (i *influxdb) pointPB(fi interface{}) *write.Point {
 						continue
 					}
 					tags[v.Type().Field(n).Name] = v.Field(n).Elem().String()
-				case reflect.Int32:
-					fields[v.Type().Field(n).Name] = v.Field(n).Elem().Int()
-				case reflect.Int64:
+				case reflect.Uint32:
+					fields[v.Type().Field(n).Name] = v.Field(n).Elem().Uint()
+				case reflect.Uint64:
 					if v.Type().Field(n).Name != "Timestamp" {
-						fields[v.Type().Field(n).Name] = v.Field(n).Elem().Int()
+						fields[v.Type().Field(n).Name] = v.Field(n).Elem().Uint()
 					} else {
-						timestamp = time.Unix(v.Field(n).Elem().Int(), 0)
+						timestamp = time.Unix(int64(v.Field(n).Elem().Uint()), 0)
 					}
 				}
 			}

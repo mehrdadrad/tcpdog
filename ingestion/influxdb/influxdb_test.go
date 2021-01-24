@@ -112,9 +112,9 @@ func TestPointPB(t *testing.T) {
 
 	assert.Len(t, point.FieldList(), 2)
 	assert.Equal(t, "PID", point.FieldList()[0].Key)
-	assert.Equal(t, int64(123456), point.FieldList()[0].Value)
+	assert.Equal(t, uint64(123456), point.FieldList()[0].Value)
 	assert.Equal(t, "RTT", point.FieldList()[1].Key)
-	assert.Equal(t, int64(12345), point.FieldList()[1].Value)
+	assert.Equal(t, uint64(12345), point.FieldList()[1].Value)
 
 }
 

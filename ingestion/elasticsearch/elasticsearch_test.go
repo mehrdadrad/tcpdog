@@ -95,11 +95,11 @@ func TestItemJSON(t *testing.T) {
 
 	assert.Equal(t, "Los_Angeles", *f.City)
 	assert.Equal(t, "foo", *f.Hostname)
-	assert.Equal(t, int32(123456), *f.PID)
-	assert.Equal(t, int32(12345), *f.RTT)
+	assert.Equal(t, uint32(123456), *f.PID)
+	assert.Equal(t, uint32(12345), *f.RTT)
 	assert.Equal(t, "10.0.0.1", *f.SAddr)
 	assert.Equal(t, "curl", *f.Task)
-	assert.Equal(t, int64(1611118090), *f.Timestamp)
+	assert.Equal(t, uint64(1611118090), *f.Timestamp)
 }
 
 func TestItemSPB(t *testing.T) {
@@ -122,11 +122,11 @@ func TestItemSPB(t *testing.T) {
 
 	assert.Equal(t, "Los_Angeles", *f.City)
 	assert.Equal(t, "foo", *f.Hostname)
-	assert.Equal(t, int32(123456), *f.PID)
-	assert.Equal(t, int32(12345), *f.RTT)
+	assert.Equal(t, uint32(123456), *f.PID)
+	assert.Equal(t, uint32(12345), *f.RTT)
 	assert.Equal(t, "10.0.0.1", *f.SAddr)
 	assert.Equal(t, "curl", *f.Task)
-	assert.Equal(t, int64(1611118090), *f.Timestamp)
+	assert.Equal(t, uint64(1611118090), *f.Timestamp)
 
 }
 
@@ -148,11 +148,11 @@ func TestItemPB(t *testing.T) {
 
 	assert.Equal(t, "Los_Angeles", *f.City)
 	assert.Equal(t, "foo", *f.Hostname)
-	assert.Equal(t, int32(123456), *f.PID)
-	assert.Equal(t, int32(12345), *f.RTT)
+	assert.Equal(t, uint32(123456), *f.PID)
+	assert.Equal(t, uint32(12345), *f.RTT)
 	assert.Equal(t, "10.0.0.1", *f.SAddr)
 	assert.Equal(t, "curl", *f.Task)
-	assert.Equal(t, int64(1611118090), *f.Timestamp)
+	assert.Equal(t, uint64(1611118090), *f.Timestamp)
 }
 
 func TestGetItemMaker(t *testing.T) {

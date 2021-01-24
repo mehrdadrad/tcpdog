@@ -255,7 +255,7 @@ func TestWorkerPB(t *testing.T) {
 	err := proto.Unmarshal(b, &p)
 	assert.NoError(t, err)
 
-	assert.Equal(t, int32(5), *p.RTT)
-	assert.Equal(t, int32(1400), *p.AdvMSS)
-	assert.Equal(t, int64(1609564925), *p.Timestamp)
+	assert.Equal(t, uint32(5), *p.RTT)
+	assert.Equal(t, uint32(1400), *p.AdvMSS)
+	assert.Equal(t, uint64(1609564925), *p.Timestamp)
 }

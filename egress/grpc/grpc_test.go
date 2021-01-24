@@ -151,10 +151,10 @@ func testProtoJSON(t *testing.T) {
 	hostname, _ := os.Hostname()
 
 	assert.NotNil(t, srv.ch1)
-	assert.Equal(t, int32(5), *srv.ch1.SRTT)
-	assert.Equal(t, int32(6), *srv.ch1.AdvMSS)
+	assert.Equal(t, uint32(5), *srv.ch1.SRTT)
+	assert.Equal(t, uint32(6), *srv.ch1.AdvMSS)
 	assert.Equal(t, hostname, *srv.ch1.Hostname)
-	assert.Equal(t, int64(1609564925), *srv.ch1.Timestamp)
+	assert.Equal(t, uint64(1609564925), *srv.ch1.Timestamp)
 
 	cancel()
 	time.Sleep(time.Second)

@@ -74,9 +74,9 @@ func TestStart(t *testing.T) {
 	}
 
 	// PB
-	rtt := int32(10)
+	rtt := uint32(10)
 	task := "curl"
-	timestamp := int64(1611118090)
+	timestamp := uint64(1611118090)
 
 	streamPB, err := client.Tracepoint(ctx)
 	err = streamPB.Send(&pb.Fields{
@@ -88,8 +88,8 @@ func TestStart(t *testing.T) {
 
 	select {
 	case a := <-ch:
-		assert.Equal(t, int32(10), *a.(*pb.Fields).RTT)
-		assert.Equal(t, int64(1611118090), *a.(*pb.Fields).Timestamp)
+		assert.Equal(t, uint32(10), *a.(*pb.Fields).RTT)
+		assert.Equal(t, uint64(1611118090), *a.(*pb.Fields).Timestamp)
 		assert.Equal(t, "curl", *a.(*pb.Fields).Task)
 	case <-time.After(time.Second):
 		t.Fatal("time exceeded")
