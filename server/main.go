@@ -29,7 +29,7 @@ func main() {
 	ctx = cfg.WithContext(ctx)
 	logger := cfg.Logger()
 
-	logger.Info("tcpdog", zap.String("version", version))
+	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "server"))
 
 	for _, flow := range cfg.Flow {
 		ch := make(chan interface{}, 1000)
@@ -51,7 +51,7 @@ func ingress(ctx context.Context, flow config.Flow, ch chan interface{}) {
 			logger.Fatal("grpc", zap.Error(err))
 		}
 
-		logger.Info("grpc", zap.String("msg", "grpc server has been started"))
+		logger.Info("grpc", zap.String("msg", flow.Ingress+" has been started"))
 
 	case "kafka":
 		err := kafka.Start(ctx, flow.Ingress, flow.Serialization, ch)
@@ -59,7 +59,7 @@ func ingress(ctx context.Context, flow config.Flow, ch chan interface{}) {
 			logger.Fatal("kafka", zap.Error(err))
 		}
 
-		logger.Info("kafka", zap.String("msg", "consumer has been started"))
+		logger.Info("kafka", zap.String("msg", flow.Ingress+" has been started"))
 	}
 }
 
@@ -74,7 +74,7 @@ func ingestion(ctx context.Context, flow config.Flow, ch chan interface{}) {
 			logger.Fatal("influxdb", zap.Error(err))
 		}
 
-		logger.Info("influxdb", zap.String("msg", "client has been started"))
+		logger.Info("influxdb", zap.String("msg", flow.Ingestion+" has been started"))
 
 	case "elasticsearch":
 		err := elasticsearch.Start(ctx, flow.Ingestion, flow.Serialization, ch)
@@ -82,7 +82,7 @@ func ingestion(ctx context.Context, flow config.Flow, ch chan interface{}) {
 			logger.Fatal("elasticsearch", zap.Error(err))
 		}
 
-		logger.Info("elasticsearch", zap.String("msg", "client has been started"))
+		logger.Info("elasticsearch", zap.String("msg", flow.Ingestion+" has been started"))
 	}
 }
 

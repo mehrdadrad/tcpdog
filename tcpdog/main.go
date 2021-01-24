@@ -28,6 +28,7 @@ func main() {
 	}
 
 	logger := cfg.Logger()
+	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "agent"))
 
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
@@ -55,6 +56,9 @@ func main() {
 		if err != nil {
 			logger.Fatal("egress", zap.Error(err))
 		}
+
+		eType := cfg.Egress[tracepoint.Egress].Type
+		logger.Info(eType, zap.String("msg", tracepoint.Egress+" has been started"))
 	}
 
 	for index, tracepoint := range cfg.Tracepoints {

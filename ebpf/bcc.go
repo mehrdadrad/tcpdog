@@ -54,6 +54,8 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 		logger.Fatal("ebpf", zap.Error(err))
 	}
 
+	logger.Info("ebpf", zap.String("msg", tp.Name+" has been attached"))
+
 	for _, version := range tp.INet {
 		table := bpf.NewTable(b.m.TableId(fmt.Sprintf("ipv%d_events%d", version, tp.Index)), b.m)
 		ch := make(chan []byte, 1000)
