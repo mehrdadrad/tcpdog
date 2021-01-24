@@ -101,8 +101,7 @@ type Tracepoint struct {
 	TCPState string `yaml:"tcp_state"`
 	Sample   int    `yaml:"sample"`
 	Workers  int    `yaml:"workers"`
-	Inet     []int  `yaml:"inet"`
-	Geo      string `yaml:"geo"`
+	INet     []int  `yaml:"inet"`
 	Egress   string `yaml:"egress"`
 }
 
@@ -147,8 +146,8 @@ func load(file string) (*Config, error) {
 
 func setDefault(conf *Config) {
 	for i := range conf.Tracepoints {
-		if len(conf.Tracepoints[i].Inet) < 1 {
-			conf.Tracepoints[i].Inet = append(conf.Tracepoints[i].Inet, 4)
+		if len(conf.Tracepoints[i].INet) < 1 {
+			conf.Tracepoints[i].INet = append(conf.Tracepoints[i].INet, 4)
 		}
 		if conf.Tracepoints[i].Workers < 1 {
 			conf.Tracepoints[i].Workers = 1
@@ -213,7 +212,7 @@ func cliToConfig(cli *cliRequest) (*Config, error) {
 				TCPState: cli.TCPState,
 				Workers:  cli.Workers,
 				Sample:   cli.Sample,
-				Inet:     inet,
+				INet:     inet,
 				Egress:   "console",
 			},
 		},

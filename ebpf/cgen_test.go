@@ -12,7 +12,7 @@ func TestGetBPFCode(t *testing.T) {
 		Name:     "sock:inet_sock_set_state",
 		Fields:   "custom_fields1",
 		TCPState: "TCP_CLOSE",
-		Inet:     []int{4, 6},
+		INet:     []int{4, 6},
 	}
 
 	cfgFileds := map[string][]config.Field{

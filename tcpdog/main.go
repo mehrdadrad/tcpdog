@@ -67,7 +67,7 @@ func main() {
 			Index:   index,
 			BufPool: bufPool,
 			OutChan: chMap[tracepoint.Egress],
-			INet:    tracepoint.Inet,
+			INet:    tracepoint.INet,
 			Workers: tracepoint.Workers,
 			Fields:  cfg.GetTPFields(tracepoint.Fields),
 		})

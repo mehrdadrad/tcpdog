@@ -67,7 +67,7 @@ func (c *CGen) getTracepointBPFCode(index int, tp config.Tracepoint) (string, er
 		return "", errors.New("field's template not exist")
 	}
 
-	for _, v := range tp.Inet {
+	for _, v := range tp.INet {
 		if v == 4 {
 			fields4 = getReqFieldsV4(cfgFields)
 		} else {

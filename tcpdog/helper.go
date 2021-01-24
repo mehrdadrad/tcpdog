@@ -30,14 +30,11 @@ func validate(cfg *config.Config) error {
 			return err
 		}
 
-		// egress
-		err = validateEgress(cfg)
+		// egress, inet and sample
+		err = validateMix(cfg, tp)
 		if err != nil {
 			return err
 		}
-
-		// inet validation and default
-		// TODO
 	}
 
 	return nil
@@ -60,12 +57,21 @@ func validateFields(cfg *config.Config, name string) error {
 	return nil
 }
 
-func validateEgress(cfg *config.Config) error {
-	for _, tracepoint := range cfg.Tracepoints {
-		if _, ok := cfg.Egress[tracepoint.Egress]; !ok {
-			return fmt.Errorf("egress not found: %s", tracepoint.Egress)
+func validateMix(cfg *config.Config, tp config.Tracepoint) error {
+	if _, ok := cfg.Egress[tp.Egress]; !ok {
+		return fmt.Errorf("egress not found: %s", tp.Egress)
+	}
+
+	for _, inet := range tp.INet {
+		if inet != 4 && inet != 6 {
+			return fmt.Errorf("wrong inet version (%s) inet:%d", tp.Name, inet)
 		}
 	}
+
+	if tp.Sample < 0 {
+		return fmt.Errorf("negative sample (%s) sample:%d", tp.Name, tp.Sample)
+	}
+
 	return nil
 }
 
