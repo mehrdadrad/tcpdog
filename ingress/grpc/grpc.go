@@ -2,11 +2,12 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 	"net"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/stats"
 
 	"github.com/mehrdadrad/tcpdog/config"
 	pb "github.com/mehrdadrad/tcpdog/proto"
@@ -50,6 +51,31 @@ func (s *Server) TracepointSPB(srv pb.TCPDog_TracepointSPBServer) error {
 	}
 }
 
+type statsHandler struct {
+	remoteAddr net.Addr
+	logger     *zap.Logger
+}
+
+func (h *statsHandler) TagRPC(ctx context.Context, s *stats.RPCTagInfo) context.Context {
+	return ctx
+}
+
+func (h *statsHandler) HandleRPC(context.Context, stats.RPCStats) {}
+
+func (h *statsHandler) TagConn(ctx context.Context, s *stats.ConnTagInfo) context.Context {
+	h.remoteAddr = s.RemoteAddr
+	return ctx
+}
+
+func (h *statsHandler) HandleConn(ctx context.Context, s stats.ConnStats) {
+	switch s.(type) {
+	case *stats.ConnEnd:
+		h.logger.Info("grpc", zap.String("msg", fmt.Sprintf("%s has been disconnected", h.remoteAddr)))
+	case *stats.ConnBegin:
+		h.logger.Info("grpc", zap.String("msg", fmt.Sprintf("%s has been connected", h.remoteAddr)))
+	}
+}
+
 // Start starts gRPC server
 func Start(ctx context.Context, name string, ch chan interface{}) error {
 	gCfg := grpcConfig(config.FromContextServer(ctx).Ingress[name].Config)
@@ -64,7 +90,7 @@ func Start(ctx context.Context, name string, ch chan interface{}) error {
 		logger: logger,
 	}
 
-	opts, err := getServerOpts(gCfg)
+	opts, err := getServerOpts(gCfg, logger)
 	if err != nil {
 		return err
 	}
@@ -80,7 +106,7 @@ func Start(ctx context.Context, name string, ch chan interface{}) error {
 	return nil
 }
 
-func getServerOpts(gCfg *Config) ([]grpc.ServerOption, error) {
+func getServerOpts(gCfg *Config, logger *zap.Logger) ([]grpc.ServerOption, error) {
 	var opts []grpc.ServerOption
 
 	if gCfg.TLSConfig != nil && gCfg.TLSConfig.Enable {
@@ -91,16 +117,7 @@ func getServerOpts(gCfg *Config) ([]grpc.ServerOption, error) {
 		opts = append(opts, grpc.Creds(creds))
 	}
 
-	opts = append(opts, grpc.StreamInterceptor(serverInterceptor))
+	opts = append(opts, grpc.StatsHandler(&statsHandler{logger: logger}))
 
 	return opts, nil
-}
-
-func serverInterceptor(srv interface{}, ss grpc.ServerStream,
-	info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	if p, ok := peer.FromContext(ss.Context()); ok {
-		srv.(*Server).logger.Info("grpc.connect", zap.String("peer", p.Addr.String()))
-	}
-
-	return handler(srv, ss)
 }
