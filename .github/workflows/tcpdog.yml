@@ -17,7 +17,7 @@ on:
 jobs:
   tcpdog:
     name: Test and build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Set up Golang
         uses: actions/setup-go@v2
@@ -26,7 +26,7 @@ jobs:
 
       - name: Check out code
         uses: actions/checkout@v2
-      
+
       - name: Install BCC
         run: |
           curl -sL https://github.com/mehrdadrad/tcpdog/releases/download/v1.0.0/libbcc-0.18.0-x86_64.deb --output libbcc.deb
