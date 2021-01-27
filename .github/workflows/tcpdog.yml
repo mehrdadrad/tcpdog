@@ -26,6 +26,11 @@ jobs:
 
       - name: Check out code
         uses: actions/checkout@v2
+      
+      - name: Install BCC
+        run: |
+          curl -sL https://github.com/mehrdadrad/tcpdog/releases/download/v1.0.0/libbcc-0.18.0-x86_64.deb
+          sudo dpkg -i libbcc-0.18.0-x86_64.deb
 
       - name: Build client
         run: |
