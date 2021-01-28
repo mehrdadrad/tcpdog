@@ -16,6 +16,8 @@ func TestGetCity(t *testing.T) {
 	cfg["level"] = "city"
 
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 	r := g.Get("2.125.160.217")
@@ -31,6 +33,8 @@ func TestGetASN(t *testing.T) {
 	cfg["level"] = "asn"
 
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 
@@ -42,6 +46,8 @@ func TestGetCityASN(t *testing.T) {
 	cfg["level"] = "city-asn"
 
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 
@@ -54,6 +60,8 @@ func TestGetCityLoc(t *testing.T) {
 	cfg["level"] = "city-loc"
 
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 
@@ -70,6 +78,8 @@ func TestGetCityLocASN(t *testing.T) {
 	cfg["level"] = "city-loc-asn"
 
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 
@@ -79,6 +89,8 @@ func TestGetCityLocASN(t *testing.T) {
 }
 func BenchmarkMaxmindParallel(b *testing.B) {
 	c := config.Config{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 
@@ -91,6 +103,8 @@ func BenchmarkMaxmindParallel(b *testing.B) {
 
 func BenchmarkMaxmind(b *testing.B) {
 	c := config.ServerConfig{}
+	c.SetMockLogger("memory")
+
 	g := New()
 	g.Init(c.Logger(), cfg)
 

@@ -1,6 +1,7 @@
 package maxmind
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strconv"
@@ -12,10 +13,15 @@ import (
 )
 
 const (
-	LevelASN = iota
+	// LevelASN : resolve IP to ASN information
+	LevelASN = iota + 1
+	// LevelCity : resolve IP to city/country information
 	LevelCity
+	// LevelCityASN : resolve IP to city/country and ASN information
 	LevelCityASN
+	// LevelCityLoc : resolve IP to city/country/lat/lon information
 	LevelCityLoc
+	// LevelCityLocASN : resolve IP to city/country/lat/lon and ASN information
 	LevelCityLocASN
 )
 
@@ -64,10 +70,12 @@ type Geo struct {
 	logger *zap.Logger
 	cityDB *maxminddb.Reader
 	asnDB  *geoip2.Reader
+	fn     func(string) map[string]string
 	level  int
+	isASN  bool
 }
 
-var validLevel = map[string]int{
+var str2Level = map[string]int{
 	"asn":          LevelASN,
 	"city":         LevelCity,
 	"city-asn":     LevelCityASN,
@@ -84,25 +92,32 @@ func New() *Geo {
 func (g *Geo) Init(logger *zap.Logger, cfg map[string]string) {
 	var err error
 
-	g.validate(cfg)
+	g.level = str2Level[strings.ToLower(cfg["level"])]
 
-	g.level = g.getLevel(cfg["level"])
+	if err := g.validate(cfg); err != nil {
+		logger.Fatal("maxmind", zap.Error(err))
+	}
 
-	if cfg["path-city"] != "" {
+	if g.level != LevelASN {
 		g.cityDB, err = maxminddb.Open(cfg["path-city"])
 		if err != nil {
 			logger.Fatal("maxmind", zap.Error(err))
 		}
 	}
 
-	if cfg["path-asn"] != "" {
+	if g.level == LevelASN || g.level == LevelCityASN || g.level == LevelCityLocASN {
+		g.isASN = true
 		g.asnDB, err = geoip2.Open(cfg["path-asn"])
 		if err != nil {
 			logger.Fatal("maxmind", zap.Error(err))
 		}
 	}
 
+	g.fn = g.getFunc()
+
 	g.logger = logger
+
+	logger.Info("geo", zap.String("msg", "maxmind has been initialized"))
 }
 
 func (g *Geo) getASN(ipStr string) map[string]string {
@@ -122,11 +137,7 @@ func (g *Geo) getASN(ipStr string) map[string]string {
 	return r
 }
 
-func (g *Geo) getCity(ipStr string) map[string]string {
-	return g.getCityASN(ipStr, false)
-}
-
-func (g *Geo) getCityASN(ipStr string, ASN bool) map[string]string {
+func (g *Geo) getCityASN(ipStr string) map[string]string {
 	var (
 		cRecord cityRecord
 		r       = map[string]string{}
@@ -147,7 +158,7 @@ func (g *Geo) getCityASN(ipStr string, ASN bool) map[string]string {
 		r["Region"] = cRecord.Subdivisions[0].Names["en"]
 	}
 
-	if !ASN {
+	if !g.isASN {
 		return r
 	}
 
@@ -162,11 +173,7 @@ func (g *Geo) getCityASN(ipStr string, ASN bool) map[string]string {
 	return r
 }
 
-func (g *Geo) getCityLoc(ipStr string) map[string]string {
-	return g.getCityLocASN(ipStr, false)
-}
-
-func (g *Geo) getCityLocASN(ipStr string, ASN bool) map[string]string {
+func (g *Geo) getCityLocASN(ipStr string) map[string]string {
 	var (
 		cRecord cityLocRecord
 		r       = map[string]string{}
@@ -188,7 +195,7 @@ func (g *Geo) getCityLocASN(ipStr string, ASN bool) map[string]string {
 		r["Region"] = cRecord.Subdivisions[0].Names["en"]
 	}
 
-	if !ASN {
+	if !g.isASN {
 		return r
 	}
 
@@ -205,31 +212,42 @@ func (g *Geo) getCityLocASN(ipStr string, ASN bool) map[string]string {
 
 // Get returns Geo information
 func (g *Geo) Get(ipStr string) map[string]string {
+	return g.fn(ipStr)
+}
+
+func (g *Geo) getFunc() func(string) map[string]string {
 	switch g.level {
 	case LevelASN:
-		return g.getASN(ipStr)
-	case LevelCity:
-		return g.getCity(ipStr)
-	case LevelCityASN:
-		return g.getCityASN(ipStr, true)
-	case LevelCityLoc:
-		return g.getCityLoc(ipStr)
-	case LevelCityLocASN:
-		return g.getCityLocASN(ipStr, true)
+		return g.getASN
+	case LevelCity, LevelCityASN:
+		return g.getCityASN
+	case LevelCityLoc, LevelCityLocASN:
+		return g.getCityLocASN
 	}
 
 	return nil
 }
 
-func (g *Geo) getLevel(level string) int {
-	if v, ok := validLevel[strings.ToLower(level)]; ok {
-		return v
+func (g *Geo) validate(cfg map[string]string) error {
+	switch g.level {
+	case LevelASN:
+		if v, isPathASN := cfg["path-asn"]; !isPathASN || len(v) < 1 {
+			return errors.New("the maxmind path-asn has not configured")
+		}
+	case LevelCity, LevelCityLoc:
+		if v, isPathCity := cfg["path-city"]; !isPathCity || len(v) < 1 {
+			return errors.New("the maxmind path-city has not configured")
+		}
+	case LevelCityASN, LevelCityLocASN:
+		if v, isPathASN := cfg["path-asn"]; !isPathASN || len(v) < 1 {
+			return errors.New("the maxmind path-asn has not configured")
+		}
+		if v, isPathCity := cfg["path-city"]; !isPathCity || len(v) < 1 {
+			return errors.New("the maxmind path-city has not configured")
+		}
+	default:
+		return errors.New("unknown maxmind/geo level")
 	}
 
-	panic("unkown level")
-}
-
-func (g *Geo) validate(cfg map[string]string) {
-	// TODO
-	// check cityDB and asnDB nil if approperiate level requested!
+	return nil
 }
