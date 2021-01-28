@@ -1,7 +1,6 @@
 package geo
 
 import (
-	"github.com/mehrdadrad/tcpdog/geo/ip2loc"
 	"github.com/mehrdadrad/tcpdog/geo/maxmind"
 	"go.uber.org/zap"
 )
@@ -16,6 +15,5 @@ type Geoer interface {
 }
 
 func init() {
-	Reg["ip2loc"] = ip2loc.New()
 	Reg["maxmind"] = maxmind.New()
 }
