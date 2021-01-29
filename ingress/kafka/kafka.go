@@ -3,18 +3,19 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/Shopify/sarama"
-	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/egress/helper"
 	pb "github.com/mehrdadrad/tcpdog/proto"
 )
 
 type consumerGroup struct {
 	group         sarama.ConsumerGroup
+	logger        *zap.Logger
 	serialization string
 }
 
@@ -32,7 +33,7 @@ func (h handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.
 	return nil
 }
 
-func newConsumerGroup(kCfg *Config) (*consumerGroup, error) {
+func newConsumerGroup(logger *zap.Logger, kCfg *Config) (*consumerGroup, error) {
 	var err error
 
 	sConfig, err := saramaConfig(kCfg)
@@ -46,7 +47,8 @@ func newConsumerGroup(kCfg *Config) (*consumerGroup, error) {
 	}
 
 	return &consumerGroup{
-		group: group,
+		group:  group,
+		logger: logger,
 	}, nil
 }
 
@@ -55,7 +57,7 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) er
 	kCfg := kafkaConfig(config.FromContextServer(ctx).Ingress[name].Config)
 	logger := config.FromContextServer(ctx).Logger()
 
-	cg, err := newConsumerGroup(kCfg)
+	cg, err := newConsumerGroup(logger, kCfg)
 	if err != nil {
 		return err
 	}
@@ -75,10 +77,18 @@ func Start(ctx context.Context, name string, ser string, ch chan interface{}) er
 
 	// consumer group
 	go func() {
+		backoff := helper.NewBackoff(logger)
+
 		for {
+			backoff.Next()
+
 			err := cg.group.Consume(ctx, []string{kCfg.Topic}, handler)
 			if err != nil {
 				logger.Error("kafka", zap.Error(err))
+			} else {
+				logger.Warn("kafka", zap.String("msg", "consumer group has been terminated"))
+				cg.consumerGroupCleanup()
+				return
 			}
 		}
 	}()
@@ -101,7 +111,7 @@ func (k *consumerGroup) worker(ctx context.Context, ch chan interface{}, bCh cha
 		b := <-bCh
 		i, err := unmarshal(b)
 		if err != nil {
-			log.Println("marshal", err, string(b))
+			k.logger.Error("kafka", zap.String("event", "marshal"), zap.Error(err))
 			continue
 		}
 
