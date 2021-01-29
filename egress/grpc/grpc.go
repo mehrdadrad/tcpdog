@@ -3,6 +3,7 @@ package grpc
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"sync"
 
@@ -24,7 +25,7 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 
 	cfg := config.FromContext(ctx)
 	logger := cfg.Logger()
-	backoff := helper.NewBackoff(cfg)
+	backoff := helper.NewBackoff(logger)
 
 	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
 	if err != nil {
@@ -125,7 +126,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 
 	cfg := config.FromContext(ctx)
 	logger := cfg.Logger()
-	backoff := helper.NewBackoff(cfg)
+	backoff := helper.NewBackoff(logger)
 
 	gCfg, err := gRPCConfig(cfg.Egress[tp.Egress].Config)
 	if err != nil {
@@ -151,6 +152,9 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 				conn.Close()
 				continue
 			}
+
+			logger.Info("grpc", zap.String("msg",
+				fmt.Sprintf("%s has been connected to %s", tp.Egress, gCfg.Server)))
 
 			err = protobuf(ctx, stream, bufpool, ch)
 			if err != nil {

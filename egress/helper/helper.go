@@ -20,7 +20,7 @@ var comma = []byte(",")[0]
 type Backoff struct {
 	duration time.Duration
 	last     time.Time
-	cfg      *config.Config
+	logger   *zap.Logger
 }
 
 // StructPB represents the conversion between
@@ -30,7 +30,6 @@ type StructPB struct {
 	fieldsName []string
 	isString   map[string]bool
 	hostname   string
-	buffer     *bytes.Buffer
 }
 
 // NewStructPB constructs and initializes a struct pb.
@@ -108,8 +107,8 @@ func (s *StructPB) Unmarshal(buf *bytes.Buffer) *pbstruct.Struct {
 }
 
 // NewBackoff constructs a new backoff
-func NewBackoff(cfg *config.Config) *Backoff {
-	return &Backoff{cfg: cfg}
+func NewBackoff(logger *zap.Logger) *Backoff {
+	return &Backoff{logger: logger}
 }
 
 // Next waits for a specific backoff time
@@ -129,7 +128,7 @@ func (b *Backoff) Next() {
 		b.last = time.Now()
 	}
 
-	b.cfg.Logger().Info("backoff", zap.String("delay", fmt.Sprintf("%.2fs", b.duration.Seconds())))
+	b.logger.Debug("backoff", zap.String("delay", fmt.Sprintf("%.2fs", b.duration.Seconds())))
 	time.Sleep(b.duration)
 }
 
