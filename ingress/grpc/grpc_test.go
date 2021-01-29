@@ -43,6 +43,7 @@ func TestStart(t *testing.T) {
 
 	// SPB
 	streamSPB, err := client.TracepointSPB(ctx)
+	assert.NoError(t, err)
 
 	m := map[string]interface{}{
 		"PID":       float64(123456),
@@ -79,6 +80,8 @@ func TestStart(t *testing.T) {
 	timestamp := uint64(1611118090)
 
 	streamPB, err := client.Tracepoint(ctx)
+	assert.NoError(t, err)
+
 	err = streamPB.Send(&pb.Fields{
 		RTT:       &rtt,
 		Task:      &task,
