@@ -87,7 +87,7 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 
 	go func() {
 		defer j.cleanup()
-		buf := new(bytes.Buffer)
+		var buf *bytes.Buffer
 
 		for {
 			select {
