@@ -95,6 +95,8 @@ func testStructPB(t *testing.T) {
 		},
 	}
 
+	cfg.SetMockLogger("memory1")
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = cfg.WithContext(ctx)
 	ch <- bytes.NewBufferString(`{"F1":5,"F2":6,"Timestamp":1609564925}`)
@@ -123,7 +125,7 @@ func testProtoJSON(t *testing.T) {
 		},
 	}
 
-	conf := config.Config{
+	cfg := config.Config{
 		Egress: map[string]config.EgressConfig{
 			"foo": {
 				Type: "grpc",
@@ -135,7 +137,9 @@ func testProtoJSON(t *testing.T) {
 		},
 	}
 
-	ctx := conf.WithContext(context.Background())
+	cfg.SetMockLogger("memory2")
+
+	ctx := cfg.WithContext(context.Background())
 	ctx, cancel := context.WithCancel(ctx)
 
 	tp := config.Tracepoint{
