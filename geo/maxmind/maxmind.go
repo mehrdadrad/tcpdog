@@ -60,11 +60,6 @@ type cityLocRecord struct {
 	} `maxminddb:"location"`
 }
 
-type asnRecord struct {
-	AutonomousSystemNumber       uint   `maxminddb:"autonomous_system_number"`
-	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization"`
-}
-
 // Geo represents Maxmind
 type Geo struct {
 	logger *zap.Logger
