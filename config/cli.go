@@ -28,7 +28,7 @@ var flags = []cli.Flag{
 func get(args []string, version string) (*cliRequest, error) {
 	var r = &cliRequest{}
 
-	initCLIAgent()
+	initCLIClient()
 
 	app := &cli.App{
 		Version: version,
@@ -80,7 +80,7 @@ func checkSudo() error {
 	return nil
 }
 
-func initCLIAgent() {
+func initCLIClient() {
 	cli.AppHelpTemplate = `usage: {{.HelpName}} options
 	
 options:

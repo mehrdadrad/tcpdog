@@ -17,6 +17,8 @@ var flagsServer = []cli.Flag{
 func getServer(args []string, version string) (*serverCLIRequest, error) {
 	var r = &serverCLIRequest{}
 
+	initCLIServer()
+
 	app := &cli.App{
 		Version: version,
 		Flags:   flagsServer,
