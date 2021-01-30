@@ -74,7 +74,7 @@ func getReqFieldsV4(cfgFields []config.Field) []FieldAttrs {
 			UMath:  v.Math,
 			Math:   attrs.Math,
 			Func:   attrs.Func,
-			Filter: replaceNameWithCFieldV4(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
+			Filter: filterConvV4(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
 		})
 	}
 
@@ -94,7 +94,7 @@ func getReqFieldsV6(cfgFields []config.Field) []FieldAttrs {
 			UMath:  v.Math,
 			Math:   attrs.Math,
 			Func:   attrs.Func,
-			Filter: replaceNameWithCFieldV6(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
+			Filter: filterConvV6(getValue(v.Filter, attrs.Filter), v.Name, attrs.CField, i),
 		})
 	}
 
@@ -108,10 +108,10 @@ func getValue(v string, d string) string {
 	return d
 }
 
-func replaceNameWithCFieldV4(filter, name, cField string, index int) string {
+func filterConvV4(filter, name, cField string, index int) string {
 	return strings.Replace(filter, name, fmt.Sprintf("data4.%s%d", cField, index), -1)
 }
 
-func replaceNameWithCFieldV6(filter, name, cField string, index int) string {
+func filterConvV6(filter, name, cField string, index int) string {
 	return strings.Replace(filter, name, fmt.Sprintf("data6.%s%d", cField, index), -1)
 }

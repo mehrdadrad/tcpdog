@@ -69,7 +69,7 @@ var (
 			DS:     "tcpi",
 			CField: "total_retrans",
 			CType:  u32,
-			Desc:   "Total retransmits for entire connectio",
+			Desc:   "Total retransmits for entire connection",
 		},
 		"AdvMSS": {
 			DS:     "tcpi",

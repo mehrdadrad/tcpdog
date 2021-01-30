@@ -28,7 +28,7 @@ func main() {
 	}
 
 	logger := cfg.Logger()
-	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "agent"))
+	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "client"))
 
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()

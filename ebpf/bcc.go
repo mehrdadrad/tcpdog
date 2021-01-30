@@ -67,7 +67,8 @@ func (b *BPF) Start(ctx context.Context, tp TP) {
 
 		for i := 0; i < tp.Workers; i++ {
 			go func(version int) {
-				data := []byte{}
+				var data []byte
+
 				d := newDecoder(logger, (version == 4))
 
 				for {
