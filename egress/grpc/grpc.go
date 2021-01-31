@@ -32,7 +32,10 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 		return err
 	}
 
-	opts := dialOpts(gCfg)
+	opts, err := dialOpts(gCfg)
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		for {
@@ -133,7 +136,10 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 		return err
 	}
 
-	opts := dialOpts(gCfg)
+	opts, err := dialOpts(gCfg)
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		for {
@@ -171,31 +177,19 @@ func Start(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool, ch cha
 	return nil
 }
 
-type grpcConf struct {
-	Server   string
-	Insecure bool
-}
-
-func gRPCConfig(cfg map[string]interface{}) (*grpcConf, error) {
-	// default config
-	gCfg := &grpcConf{
-		Server:   "localhost:8085",
-		Insecure: true,
-	}
-
-	if err := config.Transform(cfg, gCfg); err != nil {
-		return nil, err
-	}
-
-	return gCfg, nil
-}
-
-func dialOpts(gCfg *grpcConf) []grpc.DialOption {
+func dialOpts(gCfg *grpcConf) ([]grpc.DialOption, error) {
 	var opts []grpc.DialOption
 
-	if gCfg.Insecure {
+	if gCfg.TLSConfig.Enable {
+		creds, err := config.GetCreds(&gCfg.TLSConfig)
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, grpc.WithTransportCredentials(creds))
+	} else {
 		opts = append(opts, grpc.WithInsecure())
 	}
 
-	return opts
+	return opts, nil
 }
