@@ -61,16 +61,20 @@ message Fields {
     optional uint32 RateDelivered = 45;
     optional uint32 RateInterval = 46;
     optional uint32 SndSSThresh = 47;
-    optional string GeoLocation = 48;
-    optional string CCode = 49;
-    optional string CSCode = 50;
-    optional string Country = 51;
-    optional string City = 52;
-    optional string Region = 53;
-    optional string ASN = 54;
-    optional string ASNOrg = 55;
-    optional string Hostname = 56;
-    optional uint64 Timestamp = 57;
+    optional uint32 PacketsOut = 48;
+    optional uint32 RetransOut = 49;
+    optional uint32 MaxPacketsOut = 50;
+    optional uint32 MaxPacketsSeq = 51;
+    optional string GeoLocation = 52;
+    optional string CCode = 53;
+    optional string CSCode = 54;
+    optional string Country = 55;
+    optional string City = 56;
+    optional string Region = 57;
+    optional string ASN = 58;
+    optional string ASNOrg = 59;
+    optional string Hostname = 60;
+    optional uint64 Timestamp = 61;
 }
 
 message Response {

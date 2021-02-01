@@ -63,7 +63,31 @@ var (
 			CField: "rtt_us",
 			CType:  u32,
 			DSNP:   true,
-			Desc:   "",
+			Desc:   "Receiver side RTT estimation",
+		},
+		"PacketsOut": {
+			DS:     "tcpi",
+			CField: "packets_out",
+			CType:  u32,
+			Desc:   "Packets which are in flight",
+		},
+		"RetransOut": {
+			DS:     "tcpi",
+			CField: "retrans_out",
+			CType:  u32,
+			Desc:   "Retransmitted packets out",
+		},
+		"MaxPacketsOut": {
+			DS:     "tcpi",
+			CField: "max_packets_out",
+			CType:  u32,
+			Desc:   "max packets_out in last window",
+		},
+		"MaxPacketsSeq": {
+			DS:     "tcpi",
+			CField: "max_packets_seq",
+			CType:  u32,
+			Desc:   "right edge of max_packets_out flight",
 		},
 		"TotalRetrans": {
 			DS:     "tcpi",
@@ -84,7 +108,7 @@ var (
 			CField:    "skc_rcv_saddr",
 			CType:     u32,
 			DType:     IP,
-			Desc:      "",
+			Desc:      "Source IP address",
 		},
 		"DAddr": {
 			DS:        "sk->__sk_common",
@@ -93,7 +117,7 @@ var (
 			CField:    "skc_daddr",
 			CType:     u32,
 			DType:     IP,
-			Desc:      "",
+			Desc:      "Destination IP address",
 		},
 		"DPort": {
 			DS:        "sk->__sk_common",
@@ -101,7 +125,7 @@ var (
 			BigEndian: true,
 			CField:    "skc_dport",
 			CType:     u16,
-			Desc:      "",
+			Desc:      "Destination port",
 		},
 		"LPort": {
 			DS:        "sk->__sk_common",
@@ -109,7 +133,7 @@ var (
 			BigEndian: true,
 			CField:    "skc_num",
 			CType:     u16,
-			Desc:      "",
+			Desc:      "Source port",
 		},
 		"BytesReceived": {
 			DS:     "tcpi",
