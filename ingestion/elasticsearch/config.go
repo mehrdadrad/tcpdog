@@ -32,9 +32,9 @@ func elasticSearchConfig(cfg map[string]interface{}) (*esConfig, error) {
 	es := &esConfig{
 		URLs:          []string{"http://localhost:9200"},
 		Index:         "tcpdog",
-		GeoField:      "DAddr",
+		GeoField:      "SAddr",
 		Workers:       2,
-		FlushBytes:    5 & 1 << 20,
+		FlushBytes:    5 * 1 << 20,
 		FlushInterval: 1,
 	}
 
