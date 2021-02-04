@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -62,6 +63,10 @@ func action(r *cliRequest) cli.ActionFunc {
 }
 
 func checkSudo() error {
+	if test := os.Getenv("TCPDOG_TEST"); test == "true" {
+		return nil
+	}
+
 	cmd := exec.Command("id", "-u")
 	output, err := cmd.Output()
 	if err != nil {
