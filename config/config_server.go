@@ -146,16 +146,4 @@ func setDefaultServer(conf *ServerConfig) {
 	if conf.logger == nil {
 		conf.logger = GetDefaultLogger()
 	}
-
-	setGeoDefault(&conf.Geo)
-}
-
-func setGeoDefault(geo *Geo) {
-	if geo == nil {
-		return
-	}
-
-	if geo.Type == "maxmind" && geo.Config["level"] == "" {
-		geo.Config["level"] = "city-loc-asn"
-	}
 }
