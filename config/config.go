@@ -331,7 +331,7 @@ func GetTLS(cfg *TLSConfig) (*tls.Config, error) {
 func GetCreds(cfg *TLSConfig) (credentials.TransportCredentials, error) {
 	tlsConfig, err := GetTLS(cfg)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	return credentials.NewTLS(tlsConfig), nil
 }
