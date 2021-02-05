@@ -67,7 +67,7 @@ func TestStartJSON(t *testing.T) {
 	buf0.WriteString(data)
 	ch <- buf0
 
-	time.Sleep(time.Second)
+	time.Sleep(2 * time.Second)
 
 	// check through recycled buffer
 	buf1 := bufPool.Get().(*bytes.Buffer)
