@@ -17,13 +17,18 @@ func main() {
 		exit(err)
 	}
 
+	err = validate(cfg)
+	if err != nil {
+		exit(err)
+	}
+
+	logger := cfg.Logger()
+	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "server"))
+
 	ctx, cancel := signalcontext.OnInterrupt()
 	defer cancel()
 
 	ctx = cfg.WithContext(ctx)
-	logger := cfg.Logger()
-
-	logger.Info("tcpdog", zap.String("version", version), zap.String("type", "server"))
 
 	for _, flow := range cfg.Flow {
 		ch := make(chan interface{}, 1000)

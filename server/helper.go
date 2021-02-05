@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -58,6 +59,40 @@ func ingestion(ctx context.Context, flow config.Flow, ch chan interface{}) {
 
 		logger.Info("elasticsearch", zap.String("msg", flow.Ingestion+" has been started"))
 	}
+}
+
+func validate(cfg *config.ServerConfig) error {
+	return validateFlow(cfg)
+}
+
+func validateFlow(cfg *config.ServerConfig) error {
+	if len(cfg.Flow) < 1 {
+		return errors.New("there isn't any flow configuration")
+	}
+
+	for _, f := range cfg.Flow {
+		if len(f.Ingestion) < 1 {
+			return errors.New("ingestion hasn't configured")
+		}
+
+		if len(f.Ingress) < 1 {
+			return errors.New("ingress hasn't configured")
+		}
+
+		if len(f.Serialization) < 1 {
+			return errors.New("serialization hasn't configured")
+		}
+
+		if _, ok := cfg.Ingestion[f.Ingestion]; !ok {
+			return fmt.Errorf("ingestion %s is not available", f.Ingestion)
+		}
+
+		if _, ok := cfg.Ingress[f.Ingress]; !ok {
+			return fmt.Errorf("ingress %s is not available", f.Ingress)
+		}
+	}
+
+	return nil
 }
 
 func exit(err error) {
