@@ -100,7 +100,7 @@ func (g *Geo) Init(logger *zap.Logger, cfg map[string]string) {
 		}
 	}
 
-	if g.level == LevelASN || g.level == LevelCityASN || g.level == LevelCityLocASN {
+	if g.level%2 == 1 {
 		g.isASN = true
 		g.asnDB, err = geoip2.Open(cfg["path-asn"])
 		if err != nil {
@@ -224,6 +224,10 @@ func (g *Geo) getFunc() func(string) map[string]string {
 }
 
 func (g *Geo) validate(cfg map[string]string) error {
+	if _, ok := cfg["level"]; !ok {
+		return errors.New("the maxmind level has not configured")
+	}
+
 	switch g.level {
 	case LevelASN:
 		if v, isPathASN := cfg["path-asn"]; !isPathASN || len(v) < 1 {
