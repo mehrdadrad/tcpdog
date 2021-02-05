@@ -259,3 +259,117 @@ func TestConfigContextLogger(t *testing.T) {
 	logger := c.Logger()
 	assert.Equal(t, c.logger, logger)
 }
+
+func TestLoadServer(t *testing.T) {
+	ymlContent := `ingress:
+  grpc:
+    type: grpc
+    config:
+      addr: ":8085"
+
+ingestion:
+  elasticsearch:
+    type: "elasticsearch"
+    config:
+      urls:
+        - http://localhost:9200
+      index: tcpdog
+      geoField: "DAddr"
+      tlsConfig:
+        enable: true
+
+geo:
+  type: "maxmind"
+  config:
+    path-city: "GeoLite2-City.mmdb"
+    path-asn: "GeoLite2-ASN.mmdb"
+    level: city-loc-asn
+
+flow:
+  - ingress: grpc
+    ingestion: elasticsearch
+    serialization: spb`
+
+	filename := t.TempDir() + "/config.yml"
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	assert.NoError(t, err)
+	defer f.Close()
+	io.WriteString(f, ymlContent)
+
+	cfg, err := loadServer(filename)
+	assert.NoError(t, err)
+	assert.Equal(t, "maxmind", cfg.Geo.Type)
+	assert.Equal(t, "GeoLite2-City.mmdb", cfg.Geo.Config["path-city"])
+	assert.Equal(t, "GeoLite2-ASN.mmdb", cfg.Geo.Config["path-asn"])
+	assert.Equal(t, "grpc", cfg.Flow[0].Ingress)
+	assert.Equal(t, "elasticsearch", cfg.Flow[0].Ingestion)
+	assert.Equal(t, "spb", cfg.Flow[0].Serialization)
+	assert.Equal(t, "grpc", cfg.Ingress["grpc"].Type)
+	assert.Equal(t, "elasticsearch", cfg.Ingestion["elasticsearch"].Type)
+
+	// wrong filename
+	_, err = loadServer("not-exist")
+	assert.Error(t, err)
+
+	// wrong yaml
+	io.WriteString(f, "garbage:")
+	_, err = loadServer(filename)
+	assert.Error(t, err)
+}
+
+func TestGetServer(t *testing.T) {
+	ymlContent := `ingress:
+  grpc:
+    type: grpc
+
+ingestion:
+  elasticsearch:
+    type: "elasticsearch"
+
+geo:
+  type: "maxmind"
+
+flow:
+  - ingress: grpc
+    ingestion: elasticsearch
+    serialization: spb`
+
+	filename := t.TempDir() + "/config.yml"
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	assert.NoError(t, err)
+	defer f.Close()
+	io.WriteString(f, ymlContent)
+
+	os.Setenv("TCPDOG_TEST", "true")
+	c, err := GetServer([]string{"tcpdog", "-config", filename}, "0.0.0")
+	assert.NoError(t, err)
+	assert.Equal(t, "maxmind", c.Geo.Type)
+	assert.Equal(t, "elasticsearch", c.Ingestion["elasticsearch"].Type)
+	assert.Equal(t, "grpc", c.Ingress["grpc"].Type)
+
+	os.Setenv("TCPDOG_TEST", "true")
+	_, err = GetServer([]string{"tcpdog"}, "0.0.0")
+	assert.Error(t, err)
+}
+
+func TestConfigContextLoggerServer(t *testing.T) {
+	c := &ServerConfig{
+		Ingress: map[string]Ingress{"foo": {Type: "grpc"}},
+	}
+
+	c.logger = GetDefaultLogger()
+
+	ctx := c.WithContext(context.Background())
+	cFromCTX := FromContextServer(ctx)
+	assert.Equal(t, c, cFromCTX)
+
+	logger := c.Logger()
+	assert.Equal(t, c.logger, logger)
+}
+
+func TestSetMockLoggerServer(t *testing.T) {
+	c := &ServerConfig{}
+	ms := c.SetMockLogger("memory")
+	assert.NotNil(t, c.logger)
+	assert.NotNil(t, ms)
+}
