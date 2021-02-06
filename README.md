@@ -1,5 +1,5 @@
 
-[![Github Actions](https://github.com/mehrdadrad/tcpdog/workflows/build/badge.svg)](https://github.com/mehrdadrad/tcpdog/actions?query=workflow%3Abuild) [![Go report](https://goreportcard.com/badge/github.com/mehrdadrad/tcpdog)](https://goreportcard.com/report/github.com/mehrdadrad/tcpdog)  [![Coverage Status](https://coveralls.io/repos/github/mehrdadrad/tcpdog/badge.svg?branch=main)](https://coveralls.io/github/mehrdadrad/tcpdog?branch=main)
+[![Github Actions](https://github.com/mehrdadrad/tcpdog/workflows/build/badge.svg)](https://github.com/mehrdadrad/tcpdog/actions?query=workflow%3Abuild) [![Go report](https://goreportcard.com/badge/github.com/mehrdadrad/tcpdog)](https://goreportcard.com/report/github.com/mehrdadrad/tcpdog)  [![Coverage Status](https://coveralls.io/repos/github/mehrdadrad/tcpdog/badge.svg?branch=main)](https://coveralls.io/github/mehrdadrad/tcpdog?branch=main) [![GoDev](https://pkg.go.dev/static/img/badge.svg)](https://pkg.go.dev/github.com/mehrdadrad/tcpdog)
 
 ![](docs/imgs/diagram.png)
 
@@ -17,6 +17,11 @@ TCPDog is a total solution from exporting TCP statistics from Linux kernel by eB
 ### Requirements
 * Linux kernel versions 4.16 and later
 * [Libbcc](https://github.com/mehrdadrad/tcpdog/wiki/install-bcc)
+
+### Documentations
+* [quick start](https://github.com/mehrdadrad/tcpdog/wiki/quick-start)
+* [agent config](https://github.com/mehrdadrad/tcpdog/wiki/agent-config)
+* [server config](https://github.com/mehrdadrad/tcpdog/wiki/server-config)
 
 ### Sample Elasticsearch reports
 #### Polygon map and table
