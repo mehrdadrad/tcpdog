@@ -67,10 +67,16 @@ func TestStartJSON(t *testing.T) {
 	buf0.WriteString(data)
 	ch <- buf0
 
-	time.Sleep(2 * time.Second)
+	var buf1 *bytes.Buffer
+	for i := 0; i < 5; i++ {
+		time.Sleep(1 * time.Second)
 
-	// check through recycled buffer
-	buf1 := bufPool.Get().(*bytes.Buffer)
+		// check through recycled buffer
+		buf1 = bufPool.Get().(*bytes.Buffer)
+		if buf1.Len() > 0 {
+			break
+		}
+	}
 	assert.Equal(t, data, buf1.String())
 
 	cancel()
