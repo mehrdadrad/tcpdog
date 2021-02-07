@@ -112,8 +112,8 @@ func TestSaramaConfig(t *testing.T) {
 		Workers:      2,
 		Version:      "0.10.2.1",
 		TLSConfig: config.TLSConfig{
-			Enable:   true,
-			Insecure: true,
+			Enable:             true,
+			InsecureSkipVerify: true,
 		},
 	}
 

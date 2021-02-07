@@ -31,11 +31,11 @@ type Config struct {
 
 // TLSConfig represents TLS configuration.
 type TLSConfig struct {
-	Enable   bool
-	Insecure bool
-	CertFile string `yaml:"certFile"`
-	KeyFile  string `yaml:"keyFile"`
-	CAFile   string `yaml:"caFile"`
+	Enable             bool
+	InsecureSkipVerify bool
+	CertFile           string
+	KeyFile            string
+	CAFile             string
 }
 
 // EgressConfig represents egress configuration.
@@ -322,7 +322,7 @@ func GetTLS(cfg *TLSConfig) (*tls.Config, error) {
 		tlsConfig.RootCAs = caCertPool
 	}
 
-	tlsConfig.InsecureSkipVerify = cfg.Insecure
+	tlsConfig.InsecureSkipVerify = cfg.InsecureSkipVerify
 
 	return tlsConfig, nil
 }
