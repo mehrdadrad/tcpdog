@@ -141,11 +141,11 @@ func TestGet(t *testing.T) {
 	assert.NoError(t, err)
 	defer f.Close()
 	io.WriteString(f, "")
-	c, err = Get([]string{"tcpdog", "-config", filename}, "0.0.0")
+	_, err = Get([]string{"tcpdog", "-config", filename}, "0.0.0")
 	assert.NoError(t, err)
 
 	// wrong config file
-	c, err = Get([]string{"tcpdog", "-config", "foo"}, "0.0.0")
+	_, err = Get([]string{"tcpdog", "-config", "foo"}, "0.0.0")
 	assert.Error(t, err)
 }
 
@@ -372,4 +372,9 @@ func TestSetMockLoggerServer(t *testing.T) {
 	ms := c.SetMockLogger("memory")
 	assert.NotNil(t, c.logger)
 	assert.NotNil(t, ms)
+}
+
+func TestCheckSudo(t *testing.T) {
+	os.Setenv("TCPDOG_TEST", "")
+	assert.Error(t, checkSudo())
 }

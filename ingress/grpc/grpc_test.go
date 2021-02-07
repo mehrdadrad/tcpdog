@@ -27,10 +27,9 @@ func TestStart(t *testing.T) {
 		},
 	}
 
-	cfg.SetMockLogger("memory")
+	ms := cfg.SetMockLogger("memory")
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	ctx = cfg.WithContext(ctx)
 	ch := make(chan interface{}, 1)
 
@@ -74,6 +73,17 @@ func TestStart(t *testing.T) {
 		t.Fatal("time exceeded")
 	}
 
+	// drop SPB
+	ms.Reset()
+	for i := 0; i < 2; i++ {
+		err = streamSPB.Send(&pb.FieldsSPB{Fields: spb})
+		assert.NoError(t, err)
+	}
+	time.Sleep(time.Second)
+	assert.Equal(t, "data has been dropped", ms.Unmarshal()["msg"])
+
+	<-ch // empty the channel
+
 	// PB
 	rtt := uint32(10)
 	task := "curl"
@@ -98,4 +108,16 @@ func TestStart(t *testing.T) {
 		t.Fatal("time exceeded")
 	}
 
+	// drop PB
+	ms.Reset()
+	for i := 0; i < 2; i++ {
+		err = streamPB.Send(&pb.Fields{})
+		assert.NoError(t, err)
+	}
+	time.Sleep(time.Second)
+	assert.Equal(t, "data has been dropped", ms.Unmarshal()["msg"])
+
+	// recv err
+	cancel()
+	time.Sleep(time.Second)
 }
