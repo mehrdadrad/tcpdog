@@ -14,21 +14,23 @@ TCPDog is a total solution from exporting TCP statistics from Linux kernel by eB
 - Supports sampling and filtering at kernel space.
 - Supports Geo and ASN by Maxmind.
 
+![topo](docs/imgs/topo.png)
+
 ### Requirements
 * Linux kernel versions 4.16 and later
 * [Libbcc](https://github.com/mehrdadrad/tcpdog/wiki/install-bcc)
 
 ### Documentations
-* [quick start](https://github.com/mehrdadrad/tcpdog/wiki/quick-start)
-* [agent config](https://github.com/mehrdadrad/tcpdog/wiki/agent-config)
-* [server config](https://github.com/mehrdadrad/tcpdog/wiki/server-config)
+* [Quick start](https://github.com/mehrdadrad/tcpdog/wiki/quick-start)
+* [Agent config](https://github.com/mehrdadrad/tcpdog/wiki/agent-config)
+* [Server config](https://github.com/mehrdadrad/tcpdog/wiki/server-config)
 
 ### Sample Elasticsearch reports
 #### Polygon map and table
 Once you installed tcpdog on your servers, you can have the end-user perspective using real performance data which they export by tcpdog. It would be very helpful for SRE and network team to optimize and troubleshooting network and applications.
-![](docs/imgs/kibana_map.png)
+![kibana](docs/imgs/kibana_map.png)
 
-![](docs/imgs/kibana_table.png)
+![kibana](docs/imgs/kibana_table.png)
 
 You can see all the current available metrics [here](https://github.com/mehrdadrad/tcpdog/wiki/metrics).
 
