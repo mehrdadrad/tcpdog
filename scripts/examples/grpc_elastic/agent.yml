@@ -1,0 +1,25 @@
+tracepoints:
+  - name: sock:inet_sock_set_state
+    fields: fields01
+    tcp_state: TCP_CLOSE
+    inet: [4, 6]
+    egress: grpc01
+
+fields:
+  fields01:
+    - name: RTT
+      math: /1000 # convert microseconds to milliseconds
+      filter: RTT < 1 # removes any RTT less than 1 ms
+    - name: TotalRetrans
+    - name: SAddr
+    - name: DAddr
+    - name: DPort
+    - name: LPort
+    - name: BytesReceived
+    - name: BytesSent
+
+egress:
+  grpc01:
+    type: grpc-spb
+    config:
+      server: localhost:8085

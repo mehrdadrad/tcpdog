@@ -1,0 +1,26 @@
+ingress:
+  grpc:
+    type: grpc
+    config:
+      addr: ":8085"
+
+ingestion:
+  elasticsearch:
+    type: "elasticsearch"
+    config:
+      urls:
+        - http://localhost:9200
+      index: tcpdog
+      geoField: "DAddr" # if your host initiates the tcp connections otherwise it should be SAddr
+
+geo:
+  type: "maxmind"
+  config:
+    path-city: "/usr/local/tcpdog/maxmind/GeoLite2-City.mmdb"
+    path-asn: "/usr/local/tcpdog/maxmind/GeoLite2-ASN.mmdb"
+    level: city-loc-asn
+
+flow:
+  - ingress: grpc
+    ingestion: elasticsearch
+    serialization: spb
