@@ -58,7 +58,7 @@ func main() {
 		}
 
 		eType := cfg.Egress[tracepoint.Egress].Type
-		logger.Info(eType, zap.String("msg", tracepoint.Egress+" has been started"))
+		logger.Info("egress", zap.String("msg", tracepoint.Egress+" has been started"), zap.String("type", eType))
 	}
 
 	for index, tracepoint := range cfg.Tracepoints {

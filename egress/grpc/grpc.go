@@ -55,6 +55,9 @@ func StartStructPB(ctx context.Context, tp config.Tracepoint, bufpool *sync.Pool
 				continue
 			}
 
+			logger.Info("grpc", zap.String("msg",
+				fmt.Sprintf("%s has been connected to %s", tp.Egress, gCfg.Server)))
+
 			err = structpb(ctx, stream, tp, bufpool, ch)
 			if err != nil {
 				logger.Warn("grpc", zap.Error(err))
