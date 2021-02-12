@@ -62,10 +62,11 @@ func TestLoad(t *testing.T) {
     inet: [4,6]
     egress: console`
 
-	filename := t.TempDir() + "/config.yml"
+	filename := os.TempDir() + "/config.yml"
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
 	defer f.Close()
+	defer os.Remove(filename)
 	io.WriteString(f, ymlContent)
 
 	cfg, err := load(filename)
@@ -127,7 +128,6 @@ func TestCliToConfig(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	os.Setenv("TCPDOG_TEST", "true")
 	c, err := Get([]string{"tcpdog", "-fields", "SAddr,RTT", "-state", "TCP_FOO"}, "0.0.0")
 	assert.NoError(t, err)
 	assert.Equal(t, "SAddr", c.Fields["cli"][0].Name)
@@ -136,10 +136,11 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, "TCP_FOO", c.Tracepoints[0].TCPState)
 
 	// config option
-	filename := t.TempDir() + "/config.yml"
+	filename := os.TempDir() + "/config.yml"
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
 	defer f.Close()
+	defer os.Remove(filename)
 	io.WriteString(f, "")
 	_, err = Get([]string{"tcpdog", "-config", filename}, "0.0.0")
 	assert.NoError(t, err)
@@ -186,18 +187,21 @@ func TestGetTLSCreds(t *testing.T) {
 	pem.Encode(buf, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privateKey)})
 	privateKeyPem := buf.String()
 
-	tmpDir := t.TempDir()
+	tmpDir := os.TempDir()
 
 	certFile, err := os.OpenFile(tmpDir+"/certFile", os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
+	defer os.Remove(tmpDir + "/certFile")
 	certFile.WriteString(certPem)
 
 	caFile, err := os.OpenFile(tmpDir+"/caFile", os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
+	defer os.Remove(tmpDir + "/caFile")
 	caFile.WriteString(caPem)
 
 	keyFile, err := os.OpenFile(tmpDir+"/keyFile", os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
+	defer os.Remove(tmpDir + "/keyFile")
 	keyFile.WriteString(privateKeyPem)
 
 	cfg := &TLSConfig{
@@ -290,10 +294,11 @@ flow:
     ingestion: elasticsearch
     serialization: spb`
 
-	filename := t.TempDir() + "/config.yml"
+	filename := os.TempDir() + "/config.yml"
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
 	defer f.Close()
+	defer os.Remove(filename)
 	io.WriteString(f, ymlContent)
 
 	cfg, err := loadServer(filename)
@@ -334,20 +339,19 @@ flow:
     ingestion: elasticsearch
     serialization: spb`
 
-	filename := t.TempDir() + "/config.yml"
+	filename := os.TempDir() + "/config.yml"
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	assert.NoError(t, err)
 	defer f.Close()
+	defer os.Remove(filename)
 	io.WriteString(f, ymlContent)
 
-	os.Setenv("TCPDOG_TEST", "true")
 	c, err := GetServer([]string{"tcpdog", "-config", filename}, "0.0.0")
 	assert.NoError(t, err)
 	assert.Equal(t, "maxmind", c.Geo.Type)
 	assert.Equal(t, "elasticsearch", c.Ingestion["elasticsearch"].Type)
 	assert.Equal(t, "grpc", c.Ingress["grpc"].Type)
 
-	os.Setenv("TCPDOG_TEST", "true")
 	_, err = GetServer([]string{"tcpdog"}, "0.0.0")
 	assert.Error(t, err)
 }
@@ -375,6 +379,5 @@ func TestSetMockLoggerServer(t *testing.T) {
 }
 
 func TestCheckSudo(t *testing.T) {
-	os.Setenv("TCPDOG_TEST", "")
-	assert.Error(t, checkSudo())
+	assert.NoError(t, checkSudo())
 }

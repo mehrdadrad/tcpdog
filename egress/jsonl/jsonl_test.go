@@ -26,7 +26,8 @@ func TestStart(t *testing.T) {
 		},
 	}
 
-	filename := t.TempDir() + "testfile.jsonl"
+	filename := os.TempDir() + "/testfile.jsonl"
+	defer os.Remove(filename)
 
 	cfg := config.Config{
 		Egress: map[string]config.EgressConfig{
