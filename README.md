@@ -9,7 +9,7 @@ TCPDog is a total solution from exporting TCP statistics from Linux kernel by eB
 - TCP socket stats by eBPF TCP tracepoints.
 - Supports all [TCP tracepoints](https://github.com/mehrdadrad/tcpdog/wiki/tracepoints) simultaneously.
 - Customizable [TCP fields](https://github.com/mehrdadrad/tcpdog/wiki/metrics) at kernel space. 
-- Ingest to Elasticsearch or InfluxDB.
+- Ingest to Elasticsearch, ClickHouse or InfluxDB.
 - Central collection through gRPC or Kafka.
 - Supports sampling and filtering at kernel space.
 - Supports Geo and ASN by Maxmind.
@@ -24,6 +24,7 @@ TCPDog is a total solution from exporting TCP statistics from Linux kernel by eB
 * [Quick start](https://github.com/mehrdadrad/tcpdog/wiki/quick-start)
 * [Agent config](https://github.com/mehrdadrad/tcpdog/wiki/agent-config)
 * [Server config](https://github.com/mehrdadrad/tcpdog/wiki/server-config)
+* [Benchmark](https://github.com/mehrdadrad/tcpdog/wiki/benchmark)
 
 ### Sample Elasticsearch reports
 #### Polygon map and table
