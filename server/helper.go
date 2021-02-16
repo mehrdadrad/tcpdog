@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/mehrdadrad/tcpdog/config"
+	"github.com/mehrdadrad/tcpdog/ingestion/clickhouse"
 	"github.com/mehrdadrad/tcpdog/ingestion/elasticsearch"
 	"github.com/mehrdadrad/tcpdog/ingestion/influxdb"
 	"github.com/mehrdadrad/tcpdog/ingress/grpc"
@@ -58,6 +59,13 @@ func ingestion(ctx context.Context, flow config.Flow, ch chan interface{}) {
 		}
 
 		logger.Info("elasticsearch", zap.String("msg", flow.Ingestion+" has been started"))
+	case "clickhouse":
+		err := clickhouse.Start(ctx, flow.Ingestion, flow.Serialization, ch)
+		if err != nil {
+			logger.Fatal("clickhouse", zap.Error(err))
+		}
+
+		logger.Info("clickhouse", zap.String("msg", flow.Ingestion+" has been started"))
 	}
 }
 
