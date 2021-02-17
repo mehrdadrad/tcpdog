@@ -192,29 +192,21 @@ func TestGetSliceIfMaker(t *testing.T) {
 	assert.Nil(t, c.getSliceIfMaker())
 }
 
-func BenchmarkReflect(b *testing.B) {
-	v := reflect.ValueOf(&pb.Fields{}).Elem()
-	name := "RTT"
-	for i := 0; i < b.N; i++ {
-		switch v.FieldByName(name).Type().Elem().Kind() {
-		case reflect.Uint32:
-			//a[i] = uint32(f[name].(float64))
-		case reflect.Uint64:
-			//a[i] = uint64(f[name].(float64))
-		case reflect.String:
-			//a[i] = f[name]
-		}
-	}
+func TestAddQString(t *testing.T) {
+	dsn := "tcp://127.0.0.1:9000?username=&debug=false"
+	dsn, err := addQString(dsn, "foo", "bar")
+	assert.NoError(t, err)
+	assert.Contains(t, dsn, "foo=bar")
 }
 
-func BenchmarkTypeMap(b *testing.B) {
-	m := map[string]int{"RTT": 0}
-	name := "RTT"
-	for i := 0; i < b.N; i++ {
-		switch m[name] {
-		case 0:
-		case 1:
-		case 2:
-		}
+func TestClickhouseConfig(t *testing.T) {
+	cfg := map[string]interface{}{
+		"tlsConfig": map[string]interface{}{
+			"enable": true,
+		},
 	}
+
+	chCfg, err := clickhouseConfig(cfg)
+	assert.NoError(t, err)
+	assert.Contains(t, chCfg.DSName, "tls_config=tcpdog")
 }
