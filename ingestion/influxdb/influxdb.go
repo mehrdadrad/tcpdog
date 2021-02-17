@@ -135,31 +135,26 @@ func (i *influxdb) pointPB(fi interface{}) *write.Point {
 		timestamp time.Time
 	)
 
-	f := fi.(*pb.Fields)
+	v := reflect.ValueOf(fi.(*pb.Fields)).Elem()
 
-	v := reflect.ValueOf(f).Elem()
-
-	for n := 0; n < v.NumField(); n++ {
-		switch v.Field(n).Type().Kind() {
-		case reflect.Ptr:
-			if v.Field(n).Pointer() != 0 {
-				switch v.Field(n).Addr().Elem().Elem().Kind() {
-				case reflect.String:
-					if i.geo != nil && (v.Type().Field(n).Name == i.cfg.GeoField) {
-						for k1, v1 := range i.geo.Get(v.Field(n).Elem().String()) {
-							tags[k1] = v1
-						}
-						continue
+	for n := 3; n < v.NumField(); n++ {
+		if v.Field(n).Pointer() != 0 {
+			switch v.Field(n).Addr().Elem().Elem().Kind() {
+			case reflect.String:
+				if i.geo != nil && (v.Type().Field(n).Name == i.cfg.GeoField) {
+					for k1, v1 := range i.geo.Get(v.Field(n).Elem().String()) {
+						tags[k1] = v1
 					}
-					tags[v.Type().Field(n).Name] = v.Field(n).Elem().String()
-				case reflect.Uint32:
+					continue
+				}
+				tags[v.Type().Field(n).Name] = v.Field(n).Elem().String()
+			case reflect.Uint32:
+				fields[v.Type().Field(n).Name] = v.Field(n).Elem().Uint()
+			case reflect.Uint64:
+				if v.Type().Field(n).Name != "Timestamp" {
 					fields[v.Type().Field(n).Name] = v.Field(n).Elem().Uint()
-				case reflect.Uint64:
-					if v.Type().Field(n).Name != "Timestamp" {
-						fields[v.Type().Field(n).Name] = v.Field(n).Elem().Uint()
-					} else {
-						timestamp = time.Unix(int64(v.Field(n).Elem().Uint()), 0)
-					}
+				} else {
+					timestamp = time.Unix(int64(v.Field(n).Elem().Uint()), 0)
 				}
 			}
 		}
