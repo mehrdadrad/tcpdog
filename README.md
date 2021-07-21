@@ -1,5 +1,5 @@
 
-[![Github Actions](https://github.com/mehrdadrad/tcpdog/workflows/build/badge.svg)](https://github.com/mehrdadrad/tcpdog/actions?query=workflow%3Abuild) [![Go report](https://goreportcard.com/badge/github.com/mehrdadrad/tcpdog)](https://goreportcard.com/report/github.com/mehrdadrad/tcpdog)  [![Coverage Status](https://coveralls.io/repos/github/mehrdadrad/tcpdog/badge.svg?branch=main)](https://coveralls.io/github/mehrdadrad/tcpdog?branch=main) [![GoDev](https://pkg.go.dev/static/img/badge.svg)](https://pkg.go.dev/github.com/mehrdadrad/tcpdog)
+[![Github Actions](https://github.com/mehrdadrad/tcpdog/workflows/build/badge.svg)](https://github.com/mehrdadrad/tcpdog/actions?query=workflow%3Abuild) [![Go report](https://goreportcard.com/badge/github.com/mehrdadrad/tcpdog)](https://goreportcard.com/report/github.com/mehrdadrad/tcpdog)  [![Coverage Status](https://coveralls.io/repos/github/mehrdadrad/tcpdog/badge.svg?branch=main)](https://coveralls.io/github/mehrdadrad/tcpdog?branch=main) [![GoDev](https://pkg.go.dev/badge/github.com/mehrdadrad/tcpdog?utm_source=godoc)](https://pkg.go.dev/github.com/mehrdadrad/tcpdog)
 
 ![](docs/imgs/diagram.png)
 
